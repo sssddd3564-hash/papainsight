@@ -13,3 +13,4 @@
 - `https://papainsight.co.kr/` 도메인 연결 진행
 - 프로젝트 문서화 파일 추가
 - GitHub 저장소 기준 계정을 `sssddd3564-hash/papainsight`로 확정
+- GitHub 원격 저장소 `sssddd3564-hash/papainsight`에 초기 커밋 push 완료

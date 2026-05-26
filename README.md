@@ -1,0 +1,73 @@
+# 파파인사이트
+
+파파인사이트는 파파컴퍼니 ERP 홈페이지입니다.  
+현재 1차 MVP는 직원 로그인 이후 아래 두 개의 대시보드를 사용하는 구조입니다.
+
+## MVP 범위
+
+- 로그인 화면
+- 영업자료 대시보드
+- 거래처 관리 대시보드
+- 정적 배포 가능한 HTML/CSS/JavaScript 구조
+
+## 로컬 실행
+
+```powershell
+node dev-server.js
+```
+
+브라우저에서 접속:
+
+```text
+http://localhost:4175/
+```
+
+테스트 계정:
+
+```text
+아이디: papa.admin
+비밀번호: 1234
+```
+
+## 운영 도메인
+
+```text
+https://papainsight.co.kr/
+```
+
+현재 서버 배포 경로:
+
+```text
+/var/www/papainsight
+```
+
+Nginx 설정 파일:
+
+```text
+/etc/nginx/sites-enabled/papainsight.co.kr
+```
+
+## 파일 구조
+
+```text
+index.html        화면 구조
+styles.css        디자인
+script.js         로그인, 메뉴 전환, 샘플 데이터 렌더링
+dev-server.js     로컬 확인용 서버
+README.md         프로젝트 안내
+WORKING_RULES.md  작업 운영 규칙
+CHANGELOG.md      작업 이력
+ERROR_LOG.md      오류 및 해결 기록
+BACKUP_GUIDE.md   백업/복구 가이드
+```
+
+## 다음 개발 후보
+
+- 실제 직원 계정 로그인
+- 관리자 페이지
+- 영업자료 등록/수정/삭제
+- 거래처 등록/수정/삭제
+- B2B/B2C 필터
+- 연장 예정 알림
+- 데이터베이스 연결
+- 서버 배포 자동화

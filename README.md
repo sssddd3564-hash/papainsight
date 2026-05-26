@@ -35,6 +35,14 @@ http://localhost:4175/
 https://papainsight.co.kr/
 ```
 
+## GitHub 저장소
+
+앞으로 파파인사이트 작업은 아래 GitHub 계정의 저장소 기준으로 관리합니다.
+
+```text
+https://github.com/sssddd3564-hash/papainsight
+```
+
 현재 서버 배포 경로:
 
 ```text

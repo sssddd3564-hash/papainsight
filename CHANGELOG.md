@@ -12,3 +12,4 @@
 - 서버 `/var/www/papainsight` 경로에 운영 파일 배포
 - `https://papainsight.co.kr/` 도메인 연결 진행
 - 프로젝트 문서화 파일 추가
+- GitHub 저장소 기준 계정을 `sssddd3564-hash/papainsight`로 확정

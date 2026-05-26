@@ -81,3 +81,30 @@ mv /etc/nginx/sites-enabled/백업파일 /root/백업파일
 기록:
 
 `sites-enabled` 폴더 안에는 실제 활성화할 설정 파일만 둔다.
+
+### GitHub push 실패: Repository not found
+
+명령어:
+
+```powershell
+git push -u origin main
+```
+
+문제:
+
+```text
+remote: Repository not found.
+fatal: repository 'https://github.com/sssddd3564-hash/papainsight.git/' not found
+```
+
+원인:
+
+`sssddd3564-hash/papainsight` GitHub 저장소가 아직 생성되지 않았거나, 현재 인증된 GitHub 계정에 해당 저장소 접근 권한이 없음.
+
+해결:
+
+GitHub에서 `sssddd3564-hash` 계정으로 빈 저장소 `papainsight`를 먼저 생성한다. 생성 시 README, .gitignore, license는 추가하지 않는다.
+
+기록:
+
+원격 저장소가 실제로 생성된 뒤 다시 push한다.

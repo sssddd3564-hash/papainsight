@@ -68,14 +68,14 @@ const papaAiDocuments = [
     id: "blog-executor-specs",
     title: "블로그 실행사 핵심 스펙",
     fileName: "블로그_실행사_핵심스펙_제한사항_환불_분할.md",
-    path: "assets/papa-ai/blog-executor-specs.md",
+    path: "assets/papa-ai/blog-executor-specs.html",
     description: "블로그 배포, 실계정 기자단 배포 관련 실행사별 제한사항, 환불, 분할, CS Q&A",
   },
   {
     id: "product-specs",
     title: "상품별 핵심 스펙",
     fileName: "상품별_핵심스펙_제한사항_환불_효율_분할.md",
-    path: "assets/papa-ai/product-specs.md",
+    path: "assets/papa-ai/product-specs.html",
     description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본효율, 타수분할",
   },
 ];
@@ -143,12 +143,67 @@ function escapeHtml(value) {
 }
 
 function markdownToHtml(markdown) {
-  return escapeHtml(markdown)
+  const normalizedLines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const htmlBlocks = [];
+
+  for (let index = 0; index < normalizedLines.length; index += 1) {
+    const line = normalizedLines[index];
+    const nextLine = normalizedLines[index + 1] || "";
+
+    if (isMarkdownTableStart(line, nextLine)) {
+      const tableLines = [];
+
+      while (index < normalizedLines.length && normalizedLines[index].trim().startsWith("|")) {
+        tableLines.push(normalizedLines[index]);
+        index += 1;
+      }
+
+      index -= 1;
+      htmlBlocks.push(renderMarkdownTable(tableLines));
+      continue;
+    }
+
+    htmlBlocks.push(escapeHtml(line));
+  }
+
+  return htmlBlocks
+    .join("\n")
     .replace(/^### (.*)$/gm, "<h6>$1</h6>")
     .replace(/^## (.*)$/gm, "<h5>$1</h5>")
     .replace(/^# (.*)$/gm, "<h4>$1</h4>")
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br />");
+}
+
+function isMarkdownTableStart(line, nextLine) {
+  return line.trim().startsWith("|") && /^\s*\|?[\s:-]+\|[\s|:-]*$/.test(nextLine);
+}
+
+function splitMarkdownTableRow(line) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => escapeHtml(cell.trim()).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"));
+}
+
+function renderMarkdownTable(tableLines) {
+  const headerCells = splitMarkdownTableRow(tableLines[0]);
+  const bodyRows = tableLines.slice(2).map(splitMarkdownTableRow);
+
+  return `
+    <div class="ai-table-wrap">
+      <table class="ai-markdown-table">
+        <thead>
+          <tr>${headerCells.map((cell) => `<th>${cell}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${bodyRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function highlightSearch(html, searchTerm) {
@@ -292,8 +347,7 @@ async function loadPapaAiDocument(docId) {
 
 function renderPapaAiDocumentContent() {
   const doc = papaAiDocuments.find((item) => item.id === selectedPapaAiDocumentId) || papaAiDocuments[0];
-  const markdown = papaAiDocumentCache.get(doc.id) || "";
-  const html = markdownToHtml(markdown);
+  const html = papaAiDocumentCache.get(doc.id) || "";
   aiDocContent.innerHTML = highlightSearch(html, aiDocSearch.value);
 }
 

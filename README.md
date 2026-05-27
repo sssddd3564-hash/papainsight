@@ -98,4 +98,8 @@ https://github.com/lcm67088-tech/PAPAchatbot
 ```text
 assets/papa-ai/blog-executor-specs.md
 assets/papa-ai/product-specs.md
+assets/papa-ai/blog-executor-specs.html
+assets/papa-ai/product-specs.html
 ```
+
+화면 표시에는 표 구조가 보존된 `.html` 파일을 사용합니다.

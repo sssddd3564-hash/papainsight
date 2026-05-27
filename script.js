@@ -268,7 +268,7 @@ function renderMaterialCard(material) {
         <p>${escapeHtml(material.fileName || "등록 이미지")}</p>
         <small>등록일: ${material.createdAt}</small>
         <div class="document-actions">
-          <a class="mini-button" href="${material.image}" download="${escapeHtml(material.fileName || `${material.title}.png`)}">다운로드</a>
+          <button class="mini-button" type="button" data-action="download-image" data-material-id="${material.id}">다운로드</button>
           <button class="mini-button" type="button" data-action="copy-image" data-material-id="${material.id}">복사</button>
           ${material.source === "local" ? `<button class="mini-button danger" type="button" data-action="delete-image" data-material-id="${material.id}">삭제</button>` : ""}
         </div>
@@ -512,10 +512,41 @@ async function handleMaterialSubmit(event) {
   showToast("자료가 등록되었습니다.");
 }
 
+async function getMaterialBlob(material) {
+  const response = await fetch(material.image);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.blob();
+}
+
+function getMaterialFileName(material, blob) {
+  if (material.fileName) return material.fileName;
+
+  const extension = blob.type.split("/")[1] || "png";
+  return `${material.title}.${extension}`;
+}
+
+async function downloadMaterialImage(material) {
+  try {
+    const blob = await getMaterialBlob(material);
+    const objectUrl = URL.createObjectURL(blob);
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = objectUrl;
+    downloadLink.download = getMaterialFileName(material, blob);
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    URL.revokeObjectURL(objectUrl);
+    showToast("이미지 다운로드를 시작했습니다.");
+  } catch (error) {
+    console.error("이미지 다운로드 실패", error);
+    showToast("이미지를 다운로드하지 못했습니다.");
+  }
+}
+
 async function copyMaterialImage(material) {
   try {
-    const response = await fetch(material.image);
-    const blob = await response.blob();
+    const blob = await getMaterialBlob(material);
 
     if (navigator.clipboard && window.ClipboardItem) {
       await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
@@ -551,6 +582,10 @@ function handleMaterialClick(event) {
 
   if (button.dataset.action === "copy-image") {
     copyMaterialImage(material);
+  }
+
+  if (button.dataset.action === "download-image") {
+    downloadMaterialImage(material);
   }
 
   if (button.dataset.action === "delete-image") {

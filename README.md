@@ -61,6 +61,7 @@ Nginx 설정 파일:
 index.html        화면 구조
 styles.css        디자인
 script.js         로그인, 메뉴 전환, 샘플 데이터 렌더링
+assets/          영업자료 이미지 및 정적 파일
 dev-server.js     로컬 확인용 서버
 README.md         프로젝트 안내
 WORKING_RULES.md  작업 운영 규칙
@@ -74,6 +75,7 @@ BACKUP_GUIDE.md   백업/복구 가이드
 - 실제 직원 계정 로그인
 - 관리자 페이지
 - 영업자료 등록/수정/삭제
+- 사업자등록증, 플레이스 이미지표 자료 관리
 - 거래처 등록/수정/삭제
 - B2B/B2C 필터
 - 연장 예정 알림

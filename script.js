@@ -6,6 +6,39 @@ const users = [
   },
 ];
 
+const businessLicenses = [
+  {
+    title: "파파컴퍼니 사업자등록증",
+    company: "주식회사 파파컴퍼니",
+    image: "assets/business-licenses/papa-company-license.jpg",
+    updatedAt: "2024-08-16",
+  },
+  {
+    title: "맘마케팅 사업자등록증",
+    company: "맘마케팅",
+    image: "assets/business-licenses/mom-marketing-license.png",
+    updatedAt: "2023-07-16",
+  },
+];
+
+const placeImageSheets = [
+  {
+    title: "플레이스 이미지표 A",
+    description: "이미지 수급 후 이 영역에 바로 추가됩니다.",
+    status: "대기",
+  },
+  {
+    title: "플레이스 이미지표 B",
+    description: "업종별 플레이스 이미지표를 나열할 예정입니다.",
+    status: "대기",
+  },
+  {
+    title: "플레이스 이미지표 C",
+    description: "추후 이미지 파일을 받으면 카드가 이미지 미리보기로 바뀝니다.",
+    status: "대기",
+  },
+];
+
 const resources = [
   {
     category: "제안서",
@@ -69,8 +102,50 @@ const salesPage = document.querySelector("#salesPage");
 const clientsPage = document.querySelector("#clientsPage");
 const navItems = document.querySelectorAll(".nav-item");
 
+function renderBusinessLicenses() {
+  const businessLicenseGrid = document.querySelector("#businessLicenseGrid");
+  document.querySelector("#licenseCount").textContent = `${businessLicenses.length}개 자료`;
+
+  businessLicenseGrid.innerHTML = businessLicenses
+    .map(
+      (license) => `
+        <article class="document-card">
+          <a class="document-preview" href="${license.image}" target="_blank" rel="noreferrer">
+            <img src="${license.image}" alt="${license.title}" loading="lazy" />
+          </a>
+          <div class="document-meta">
+            <span class="tag">사업자등록증</span>
+            <h5>${license.title}</h5>
+            <p>${license.company}</p>
+            <small>기준일: ${license.updatedAt}</small>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderPlaceImageSheets() {
+  const placeImageGrid = document.querySelector("#placeImageGrid");
+  document.querySelector("#placeImageCount").textContent = `${placeImageSheets.length}개 슬롯`;
+
+  placeImageGrid.innerHTML = placeImageSheets
+    .map(
+      (sheet) => `
+        <article class="placeholder-card">
+          <span class="tag">${sheet.status}</span>
+          <h5>${sheet.title}</h5>
+          <p>${sheet.description}</p>
+        </article>
+      `,
+    )
+    .join("");
+}
+
 function renderResources() {
   const resourceGrid = document.querySelector("#resourceGrid");
+  document.querySelector("#resourceCount").textContent = `${resources.length}개 자료`;
+
   resourceGrid.innerHTML = resources
     .map(
       (resource) => `
@@ -152,5 +227,7 @@ navItems.forEach((item) => {
   item.addEventListener("click", () => showPage(item.dataset.page));
 });
 
+renderBusinessLicenses();
+renderPlaceImageSheets();
 renderResources();
 renderClients();

@@ -11,7 +11,7 @@ C:\Users\USER\Documents\파파 인사이트
 운영 배포 압축 생성:
 
 ```powershell
-Compress-Archive -Path index.html,styles.css,script.js -DestinationPath papainsight-production.zip -Force
+Compress-Archive -Path index.html,styles.css,script.js,assets -DestinationPath papainsight-production.zip -Force
 ```
 
 전체 작업 백업 압축 생성:

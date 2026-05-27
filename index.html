@@ -62,12 +62,45 @@
             <div class="section-head">
               <div>
                 <h3>영업자료 보관함</h3>
-                <p>제안서, 안내자료, 견적 관련 자료를 한 곳에서 관리합니다.</p>
+                <p>사업자등록증, 플레이스 이미지표, 제안 자료를 카테고리별로 관리합니다.</p>
               </div>
               <button class="secondary-button" type="button">자료 추가</button>
             </div>
 
-            <div class="resource-grid" id="resourceGrid"></div>
+            <div class="sales-library">
+              <section class="resource-category">
+                <div class="category-head">
+                  <div>
+                    <span class="category-label">카테고리</span>
+                    <h4>사업자등록증</h4>
+                  </div>
+                  <strong id="licenseCount">0개 자료</strong>
+                </div>
+                <div class="document-grid" id="businessLicenseGrid"></div>
+              </section>
+
+              <section class="resource-category">
+                <div class="category-head">
+                  <div>
+                    <span class="category-label">카테고리</span>
+                    <h4>플레이스 이미지표</h4>
+                  </div>
+                  <strong id="placeImageCount">추가 예정</strong>
+                </div>
+                <div class="document-grid compact" id="placeImageGrid"></div>
+              </section>
+
+              <section class="resource-category">
+                <div class="category-head">
+                  <div>
+                    <span class="category-label">카테고리</span>
+                    <h4>기타 영업자료</h4>
+                  </div>
+                  <strong id="resourceCount">0개 자료</strong>
+                </div>
+                <div class="resource-grid" id="resourceGrid"></div>
+              </section>
+            </div>
           </section>
 
           <section class="page-section hidden" id="clientsPage">

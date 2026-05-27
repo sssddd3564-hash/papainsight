@@ -69,6 +69,7 @@ const papaAiDocuments = [
     title: "블로그 실행사 핵심 스펙",
     fileName: "블로그_실행사_핵심스펙_제한사항_환불_분할.md",
     path: "assets/papa-ai/blog-executor-specs.html",
+    tablePath: "assets/papa-ai/blog-executor-specs.md",
     description: "블로그 배포, 실계정 기자단 배포 관련 실행사별 제한사항, 환불, 분할, CS Q&A",
   },
   {
@@ -76,6 +77,7 @@ const papaAiDocuments = [
     title: "상품별 핵심 스펙",
     fileName: "상품별_핵심스펙_제한사항_환불_효율_분할.md",
     path: "assets/papa-ai/product-specs.html",
+    tablePath: "assets/papa-ai/product-specs.md",
     description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본효율, 타수분할",
   },
 ];
@@ -333,9 +335,16 @@ async function loadPapaAiDocument(docId) {
 
   try {
     if (!papaAiDocumentCache.has(doc.id)) {
-      const response = await fetch(doc.path);
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      papaAiDocumentCache.set(doc.id, await response.text());
+      const [htmlResponse, tableResponse] = await Promise.all([fetch(doc.path), fetch(doc.tablePath)]);
+      if (!htmlResponse.ok) throw new Error(`${htmlResponse.status} ${htmlResponse.statusText}`);
+      if (!tableResponse.ok) throw new Error(`${tableResponse.status} ${tableResponse.statusText}`);
+
+      const html = await htmlResponse.text();
+      const tableSource = await tableResponse.text();
+      papaAiDocumentCache.set(doc.id, {
+        html,
+        summaryTable: parseSummaryTable(tableSource),
+      });
     }
 
     renderPapaAiDocumentContent();
@@ -347,8 +356,86 @@ async function loadPapaAiDocument(docId) {
 
 function renderPapaAiDocumentContent() {
   const doc = papaAiDocuments.find((item) => item.id === selectedPapaAiDocumentId) || papaAiDocuments[0];
-  const html = papaAiDocumentCache.get(doc.id) || "";
-  aiDocContent.innerHTML = highlightSearch(html, aiDocSearch.value);
+  const cachedDocument = papaAiDocumentCache.get(doc.id) || { html: "", summaryTable: null };
+  const summaryHtml = renderSummaryTable(cachedDocument.summaryTable);
+  const contentHtml = `
+    ${summaryHtml}
+    <div class="ai-doc-full">
+      <div class="category-head ai-doc-section-head">
+        <div>
+          <span class="category-label">원문 문서</span>
+          <h4>${doc.fileName}</h4>
+          <p>아래 원문은 PAPAchatbot 문서 내용을 그대로 참고용으로 표시합니다.</p>
+        </div>
+      </div>
+      ${cachedDocument.html}
+    </div>
+  `;
+  aiDocContent.innerHTML = highlightSearch(contentHtml, aiDocSearch.value);
+}
+
+function parseSummaryTable(markdown) {
+  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const startIndex = lines.findIndex((line) => line.includes("핵심 비교 요약표"));
+  if (startIndex === -1) return null;
+
+  const tableLines = [];
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line) {
+      if (tableLines.length > 1) break;
+      continue;
+    }
+
+    if (!line.includes("\t")) {
+      if (tableLines.length > 1) break;
+      continue;
+    }
+
+    tableLines.push(line);
+  }
+
+  if (tableLines.length < 2) return null;
+
+  const [headerLine, ...rowLines] = tableLines;
+  return {
+    headers: headerLine.split("\t").map((cell) => cell.trim()),
+    rows: rowLines.map((line) => line.split("\t").map((cell) => cell.trim())),
+  };
+}
+
+function renderSummaryTable(table) {
+  if (!table) return "";
+
+  return `
+    <section class="ai-summary-section">
+      <div class="category-head ai-doc-section-head">
+        <div>
+          <span class="category-label">핵심 비교 요약표</span>
+          <h4>한눈에 보는 실행사/상품 비교</h4>
+          <p>원본 문서의 핵심 비교 요약표를 표 형태로 먼저 정리했습니다.</p>
+        </div>
+      </div>
+      <div class="ai-table-wrap">
+        <table class="ai-summary-table">
+          <thead>
+            <tr>${table.headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr>
+          </thead>
+          <tbody>
+            ${table.rows
+              .map(
+                (row) => `
+                  <tr>
+                    ${table.headers.map((_, index) => `<td>${escapeHtml(row[index] || "")}</td>`).join("")}
+                  </tr>
+                `,
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
 }
 
 function renderClients() {

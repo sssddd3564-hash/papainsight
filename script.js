@@ -3,6 +3,49 @@ const users = [
     id: "papa.admin",
     password: "1234",
     name: "관리자",
+    role: "admin",
+  },
+  {
+    id: "이신",
+    password: "ss1234",
+    name: "이신",
+    role: "staff",
+  },
+  {
+    id: "정복",
+    password: "5263",
+    name: "정복",
+    role: "staff",
+  },
+  {
+    id: "지영",
+    password: "5662",
+    name: "지영",
+    role: "staff",
+  },
+  {
+    id: "용진",
+    password: "9543",
+    name: "용진",
+    role: "staff",
+  },
+  {
+    id: "정완",
+    password: "9630",
+    name: "정완",
+    role: "staff",
+  },
+  {
+    id: "현민",
+    password: "4634",
+    name: "현민",
+    role: "staff",
+  },
+  {
+    id: "오찬",
+    password: "7468",
+    name: "오찬",
+    role: "staff",
   },
 ];
 

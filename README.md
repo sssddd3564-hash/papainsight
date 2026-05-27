@@ -78,8 +78,24 @@ BACKUP_GUIDE.md   백업/복구 가이드
 - 사업자등록증, 플레이스 이미지표 자료 관리
 - 이미지 자료 다운로드/복사
 - 카테고리별 이미지 등록 팝업
+- 파파AI 문서 대시보드
 - 거래처 등록/수정/삭제
 - B2B/B2C 필터
 - 연장 예정 알림
 - 데이터베이스 연결
 - 서버 배포 자동화
+
+## 파파AI 포함 문서
+
+출처 저장소:
+
+```text
+https://github.com/lcm67088-tech/PAPAchatbot
+```
+
+현재 파파인사이트에는 아래 두 문서만 포함합니다.
+
+```text
+assets/papa-ai/blog-executor-specs.md
+assets/papa-ai/product-specs.md
+```

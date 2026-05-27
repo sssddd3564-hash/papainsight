@@ -14,6 +14,8 @@ C:\Users\USER\Documents\파파 인사이트
 Compress-Archive -Path index.html,styles.css,script.js,assets -DestinationPath papainsight-production.zip -Force
 ```
 
+`assets`에는 영업자료 이미지와 파파AI Markdown 문서가 포함됩니다.
+
 전체 작업 백업 압축 생성:
 
 ```powershell

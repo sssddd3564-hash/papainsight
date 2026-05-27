@@ -588,6 +588,90 @@ h2 {
   grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1fr);
 }
 
+.ai-dashboard {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+.ai-doc-list {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.ai-doc-button {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink);
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  text-align: left;
+}
+
+.ai-doc-button.active,
+.ai-doc-button:hover {
+  border-color: rgba(22, 106, 106, 0.55);
+  box-shadow: 0 0 0 3px rgba(22, 106, 106, 0.1);
+}
+
+.ai-doc-button span,
+.ai-doc-button small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.ai-doc-viewer {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ai-doc-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.ai-doc-toolbar h4 {
+  font-size: 20px;
+  margin: 3px 0 0;
+}
+
+.ai-doc-toolbar input {
+  max-width: 320px;
+  width: 100%;
+}
+
+.ai-doc-content {
+  color: #344054;
+  font-size: 14px;
+  line-height: 1.75;
+  max-height: calc(100vh - 240px);
+  overflow: auto;
+  padding: 22px;
+}
+
+.ai-doc-content h4,
+.ai-doc-content h5,
+.ai-doc-content h6 {
+  color: var(--ink);
+  margin: 18px 0 8px;
+}
+
+.ai-doc-content mark {
+  background: #fde68a;
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
 .ai-composer,
 .ai-result-panel {
   background: var(--panel);
@@ -711,7 +795,8 @@ tr:last-child td {
   .document-grid,
   .document-grid.compact,
   .metric-row,
-  .ai-workbench {
+  .ai-workbench,
+  .ai-dashboard {
     grid-template-columns: 1fr;
   }
 

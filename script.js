@@ -63,6 +63,23 @@ const resources = [
   },
 ];
 
+const papaAiDocuments = [
+  {
+    id: "blog-executor-specs",
+    title: "블로그 실행사 핵심 스펙",
+    fileName: "블로그_실행사_핵심스펙_제한사항_환불_분할.md",
+    path: "assets/papa-ai/blog-executor-specs.md",
+    description: "블로그 배포, 실계정 기자단 배포 관련 실행사별 제한사항, 환불, 분할, CS Q&A",
+  },
+  {
+    id: "product-specs",
+    title: "상품별 핵심 스펙",
+    fileName: "상품별_핵심스펙_제한사항_환불_효율_분할.md",
+    path: "assets/papa-ai/product-specs.md",
+    description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본효율, 타수분할",
+  },
+];
+
 const clients = [
   { name: "오렌지파트너스", type: "B2B", status: "진행 중", statusClass: "active", renewal: "2026-06-15", owner: "김팀장" },
   { name: "블루하우스", type: "B2C", status: "자료 대기", statusClass: "pending", renewal: "2026-06-02", owner: "이매니저" },
@@ -77,8 +94,8 @@ const logoutButton = document.querySelector("#logoutButton");
 const currentUser = document.querySelector("#currentUser");
 const pageTitle = document.querySelector("#pageTitle");
 const salesPage = document.querySelector("#salesPage");
-const clientsPage = document.querySelector("#clientsPage");
 const papaAiPage = document.querySelector("#papaAiPage");
+const clientsPage = document.querySelector("#clientsPage");
 const navItems = document.querySelectorAll(".nav-item");
 const materialsLibrary = document.querySelector("#materialsLibrary");
 const materialModal = document.querySelector("#materialModal");
@@ -90,18 +107,13 @@ const openMaterialModalButton = document.querySelector("#openMaterialModal");
 const closeMaterialModalButton = document.querySelector("#closeMaterialModal");
 const cancelMaterialModalButton = document.querySelector("#cancelMaterialModal");
 const toastMessage = document.querySelector("#toastMessage");
-const papaAiPrompt = document.querySelector("#papaAiPrompt");
-const papaAiOutput = document.querySelector("#papaAiOutput");
-const runPapaAiButton = document.querySelector("#runPapaAiButton");
+const aiDocList = document.querySelector("#aiDocList");
+const aiDocTitle = document.querySelector("#aiDocTitle");
+const aiDocContent = document.querySelector("#aiDocContent");
+const aiDocSearch = document.querySelector("#aiDocSearch");
 
-const papaAiTemplates = {
-  proposal:
-    "신규 거래처 업종: \n관심 서비스: \n고객이 중요하게 보는 점: \n위 내용을 바탕으로 카카오톡으로 보낼 짧은 제안 문구를 작성해줘.",
-  reply:
-    "고객 질문: \n현재 상황: \n확인 필요한 정보: \n위 내용을 바탕으로 친절하고 신뢰감 있는 상담 답변을 작성해줘.",
-  checklist:
-    "거래처명: \n계약 서비스: \n시작 예정일: \n위 내용을 바탕으로 담당자가 확인할 작업 체크리스트를 만들어줘.",
-};
+const papaAiDocumentCache = new Map();
+let selectedPapaAiDocumentId = papaAiDocuments[0].id;
 
 function getStoredMaterials() {
   try {
@@ -128,6 +140,23 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function markdownToHtml(markdown) {
+  return escapeHtml(markdown)
+    .replace(/^### (.*)$/gm, "<h6>$1</h6>")
+    .replace(/^## (.*)$/gm, "<h5>$1</h5>")
+    .replace(/^# (.*)$/gm, "<h4>$1</h4>")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\n/g, "<br />");
+}
+
+function highlightSearch(html, searchTerm) {
+  const term = searchTerm.trim();
+  if (!term) return html;
+
+  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return html.replace(new RegExp(escapedTerm, "gi"), (match) => `<mark>${match}</mark>`);
 }
 
 function showToast(message) {
@@ -189,6 +218,106 @@ function renderMaterialCard(material) {
       </div>
     </article>
   `;
+}
+
+function renderResources() {
+  const legacyCategory = document.createElement("section");
+  legacyCategory.className = "resource-category";
+  legacyCategory.innerHTML = `
+    <div class="category-head">
+      <div>
+        <span class="category-label">카테고리</span>
+        <h4>기타 영업자료</h4>
+        <p>문서형 자료를 모아둔 임시 영역입니다.</p>
+      </div>
+      <strong>${resources.length}개 자료</strong>
+    </div>
+    <div class="resource-grid">
+      ${resources
+        .map(
+          (resource) => `
+            <article class="resource-card">
+              <span class="tag">${resource.category}</span>
+              <h4>${resource.title}</h4>
+              <p>${resource.description}</p>
+              <button type="button">자료 보기</button>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+  materialsLibrary.appendChild(legacyCategory);
+}
+
+function renderSalesLibrary() {
+  renderMaterials();
+  renderResources();
+}
+
+function renderPapaAiDocumentList() {
+  aiDocList.innerHTML = papaAiDocuments
+    .map(
+      (doc) => `
+        <button class="ai-doc-button ${doc.id === selectedPapaAiDocumentId ? "active" : ""}" type="button" data-doc-id="${doc.id}">
+          <strong>${doc.title}</strong>
+          <span>${doc.fileName}</span>
+          <small>${doc.description}</small>
+        </button>
+      `,
+    )
+    .join("");
+}
+
+async function loadPapaAiDocument(docId) {
+  const doc = papaAiDocuments.find((item) => item.id === docId) || papaAiDocuments[0];
+  selectedPapaAiDocumentId = doc.id;
+  renderPapaAiDocumentList();
+  aiDocTitle.textContent = doc.title;
+  aiDocContent.textContent = "문서를 불러오는 중입니다.";
+
+  try {
+    if (!papaAiDocumentCache.has(doc.id)) {
+      const response = await fetch(doc.path);
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      papaAiDocumentCache.set(doc.id, await response.text());
+    }
+
+    renderPapaAiDocumentContent();
+  } catch (error) {
+    aiDocContent.textContent = "문서를 불러오지 못했습니다.";
+    console.error(error);
+  }
+}
+
+function renderPapaAiDocumentContent() {
+  const doc = papaAiDocuments.find((item) => item.id === selectedPapaAiDocumentId) || papaAiDocuments[0];
+  const markdown = papaAiDocumentCache.get(doc.id) || "";
+  const html = markdownToHtml(markdown);
+  aiDocContent.innerHTML = highlightSearch(html, aiDocSearch.value);
+}
+
+function renderClients() {
+  const clientTable = document.querySelector("#clientTable");
+  const renewalCount = clients.filter((client) => client.statusClass === "risk" || client.statusClass === "pending").length;
+
+  document.querySelector("#totalClients").textContent = clients.length;
+  document.querySelector("#activeClients").textContent = clients.filter((client) => client.statusClass === "active").length;
+  document.querySelector("#renewalClients").textContent = renewalCount;
+
+  clientTable.innerHTML = clients
+    .map(
+      (client) => `
+        <tr>
+          <td><strong>${client.name}</strong></td>
+          <td>${client.type}</td>
+          <td><span class="status ${client.statusClass}">${client.status}</span></td>
+          <td>${client.renewal}</td>
+          <td>${client.owner}</td>
+        </tr>
+      `,
+    )
+    .join("");
 }
 
 function openMaterialModal() {
@@ -288,64 +417,6 @@ function handleMaterialClick(event) {
   }
 }
 
-function renderResources() {
-  const legacyCategory = document.createElement("section");
-  legacyCategory.className = "resource-category";
-  legacyCategory.innerHTML = `
-    <div class="category-head">
-      <div>
-        <span class="category-label">카테고리</span>
-        <h4>기타 영업자료</h4>
-        <p>문서형 자료를 모아둔 임시 영역입니다.</p>
-      </div>
-      <strong>${resources.length}개 자료</strong>
-    </div>
-    <div class="resource-grid">
-      ${resources
-        .map(
-          (resource) => `
-            <article class="resource-card">
-              <span class="tag">${resource.category}</span>
-              <h4>${resource.title}</h4>
-              <p>${resource.description}</p>
-              <button type="button">자료 보기</button>
-            </article>
-          `,
-        )
-        .join("")}
-    </div>
-  `;
-  materialsLibrary.appendChild(legacyCategory);
-}
-
-function renderSalesLibrary() {
-  renderMaterials();
-  renderResources();
-}
-
-function renderClients() {
-  const clientTable = document.querySelector("#clientTable");
-  const renewalCount = clients.filter((client) => client.statusClass === "risk" || client.statusClass === "pending").length;
-
-  document.querySelector("#totalClients").textContent = clients.length;
-  document.querySelector("#activeClients").textContent = clients.filter((client) => client.statusClass === "active").length;
-  document.querySelector("#renewalClients").textContent = renewalCount;
-
-  clientTable.innerHTML = clients
-    .map(
-      (client) => `
-        <tr>
-          <td><strong>${client.name}</strong></td>
-          <td>${client.type}</td>
-          <td><span class="status ${client.statusClass}">${client.status}</span></td>
-          <td>${client.renewal}</td>
-          <td>${client.owner}</td>
-        </tr>
-      `,
-    )
-    .join("");
-}
-
 function showDashboard(user) {
   currentUser.textContent = `${user.name} (${user.id})`;
   loginView.classList.add("hidden");
@@ -367,45 +438,10 @@ function showPage(page) {
   navItems.forEach((item) => {
     item.classList.toggle("active", item.dataset.page === page);
   });
-}
 
-function applyPapaAiTemplate(templateId) {
-  const template = papaAiTemplates[templateId];
-  if (!template) return;
-
-  papaAiPrompt.value = template;
-  papaAiPrompt.focus();
-}
-
-function createPapaAiDraft() {
-  const prompt = papaAiPrompt.value.trim();
-  if (!prompt) {
-    showToast("파파AI 요청 내용을 입력해 주세요.");
-    papaAiPrompt.focus();
-    return;
+  if (page === "papa-ai" && !papaAiDocumentCache.has(selectedPapaAiDocumentId)) {
+    loadPapaAiDocument(selectedPapaAiDocumentId);
   }
-
-  papaAiOutput.textContent = [
-    "초안",
-    "",
-    "안녕하세요, 파파컴퍼니입니다.",
-    "말씀 주신 내용을 기준으로 현재 상황에 맞는 진행 방향을 정리해 드리겠습니다.",
-    "",
-    "1. 고객 니즈를 먼저 확인하고 필요한 자료를 안내합니다.",
-    "2. 서비스 범위와 예상 진행 일정을 간단히 공유합니다.",
-    "3. 다음 액션은 담당자가 확인 후 바로 이어갈 수 있도록 체크리스트로 남깁니다.",
-    "",
-    `요청 요약: ${prompt.slice(0, 120)}${prompt.length > 120 ? "..." : ""}`,
-  ].join("\n");
-
-  showToast("파파AI 초안이 생성되었습니다.");
-}
-
-function handlePapaAiTemplateClick(event) {
-  const button = event.target.closest("[data-template]");
-  if (!button) return;
-
-  applyPapaAiTemplate(button.dataset.template);
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -443,9 +479,13 @@ materialModal.addEventListener("click", (event) => {
 });
 materialForm.addEventListener("submit", handleMaterialSubmit);
 materialsLibrary.addEventListener("click", handleMaterialClick);
-runPapaAiButton.addEventListener("click", createPapaAiDraft);
-papaAiPage.addEventListener("click", handlePapaAiTemplateClick);
+aiDocList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-doc-id]");
+  if (button) loadPapaAiDocument(button.dataset.docId);
+});
+aiDocSearch.addEventListener("input", renderPapaAiDocumentContent);
 
 renderCategoryOptions();
 renderSalesLibrary();
+renderPapaAiDocumentList();
 renderClients();

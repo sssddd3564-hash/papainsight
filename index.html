@@ -71,6 +71,30 @@
             <div class="sales-library" id="materialsLibrary"></div>
           </section>
 
+          <section class="page-section hidden" id="papaAiPage">
+            <div class="section-head">
+              <div>
+                <h3>파파AI 자료 대시보드</h3>
+                <p>PAPAchatbot 저장소에서 가져온 핵심 CS/상품 스펙 문서만 모아둔 화면입니다.</p>
+              </div>
+            </div>
+
+            <div class="ai-dashboard">
+              <aside class="ai-doc-list" id="aiDocList"></aside>
+
+              <article class="ai-doc-viewer">
+                <div class="ai-doc-toolbar">
+                  <div>
+                    <span class="category-label">문서</span>
+                    <h4 id="aiDocTitle">파파AI 문서</h4>
+                  </div>
+                  <input id="aiDocSearch" type="search" placeholder="문서 내 검색" />
+                </div>
+                <div class="ai-doc-content" id="aiDocContent">문서를 불러오는 중입니다.</div>
+              </article>
+            </div>
+          </section>
+
           <section class="page-section hidden" id="clientsPage">
             <div class="section-head">
               <div>
@@ -108,62 +132,6 @@
                 </thead>
                 <tbody id="clientTable"></tbody>
               </table>
-            </div>
-          </section>
-
-          <section class="page-section hidden" id="papaAiPage">
-            <div class="section-head">
-              <div>
-                <h3>파파AI 업무지원</h3>
-                <p>상담 내용과 거래처 정보를 바탕으로 제안 문구, 응대 메시지, 작업 체크리스트를 빠르게 정리합니다.</p>
-              </div>
-              <button class="secondary-button" id="runPapaAiButton" type="button">초안 생성</button>
-            </div>
-
-            <div class="ai-workbench">
-              <section class="ai-composer">
-                <label>
-                  요청 내용
-                  <textarea id="papaAiPrompt" rows="8" placeholder="예: 신규 병원 거래처에 보낼 플레이스 리워드 제안 문구를 작성해줘."></textarea>
-                </label>
-                <div class="ai-toolbar">
-                  <button class="ghost-button" type="button" data-template="proposal">제안 문구</button>
-                  <button class="ghost-button" type="button" data-template="reply">상담 답변</button>
-                  <button class="ghost-button" type="button" data-template="checklist">작업 체크리스트</button>
-                </div>
-              </section>
-
-              <section class="ai-result-panel">
-                <div class="category-head">
-                  <div>
-                    <span class="category-label">AI RESULT</span>
-                    <h4>생성 초안</h4>
-                    <p>실제 발송 전 담당자가 표현과 금액을 확인합니다.</p>
-                  </div>
-                </div>
-                <div class="ai-output" id="papaAiOutput">왼쪽에 요청을 입력하거나 템플릿을 선택하면 초안이 표시됩니다.</div>
-              </section>
-            </div>
-
-            <div class="resource-grid">
-              <article class="resource-card">
-                <span class="tag">영업</span>
-                <h4>서비스 제안 요약</h4>
-                <p>거래처 업종과 니즈를 입력하면 핵심 혜택 중심의 3문장 제안을 만듭니다.</p>
-                <button type="button" data-template="proposal">템플릿 적용</button>
-              </article>
-              <article class="resource-card">
-                <span class="tag">CS</span>
-                <h4>카카오 상담 응대</h4>
-                <p>고객 질문을 붙여넣으면 친절한 답변과 다음 액션을 함께 정리합니다.</p>
-                <button type="button" data-template="reply">템플릿 적용</button>
-              </article>
-              <article class="resource-card">
-                <span class="tag">운영</span>
-                <h4>진행 체크리스트</h4>
-                <p>계약 이후 자료 수급, 작업 시작, 완료 보고까지 확인 항목을 만듭니다.</p>
-                <button type="button" data-template="checklist">템플릿 적용</button>
-              </article>
             </div>
           </section>
         </div>

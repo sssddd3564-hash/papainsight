@@ -1,6 +1,6 @@
 const users = [
   { id: "papa.admin", password: "1234", name: "관리자", role: "admin" },
-  { id: "이신", password: "ss1234", name: "이신", role: "staff" },
+  { id: "이신", password: "ss1234", passwordAliases: ["ㄴㄴ1234"], name: "이신", role: "staff" },
   { id: "정복", password: "5263", name: "정복", role: "staff" },
   { id: "지영", password: "5662", name: "지영", role: "staff" },
   { id: "용진", password: "9543", name: "용진", role: "staff" },
@@ -645,13 +645,17 @@ function showPage(page) {
   }
 }
 
+function isMatchingPassword(user, password) {
+  return user.password === password || user.passwordAliases?.includes(password);
+}
+
 loginForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const formData = new FormData(loginForm);
   const userId = formData.get("userId")?.trim();
   const password = formData.get("password")?.trim();
-  const user = users.find((item) => item.id === userId && item.password === password);
+  const user = users.find((item) => item.id === userId && isMatchingPassword(item, password));
 
   if (!user) {
     alert("아이디 또는 비밀번호가 올바르지 않습니다.");

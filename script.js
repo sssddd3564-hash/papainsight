@@ -557,11 +557,36 @@ async function copyMaterialImage(material) {
     console.warn("이미지 복사 실패", error);
   }
 
+  const didCopyUrl = await copyTextToClipboard(new URL(material.image, window.location.href).href);
+  showToast(didCopyUrl ? "이미지 주소를 복사했습니다." : "이 브라우저에서는 이미지 복사가 제한됩니다.");
+}
+
+async function copyTextToClipboard(text) {
   try {
-    await navigator.clipboard.writeText(material.image);
-    showToast("이미지 주소를 복사했습니다.");
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
   } catch (error) {
-    showToast("이 브라우저에서는 복사를 지원하지 않습니다.");
+    console.warn("Clipboard API 텍스트 복사 실패", error);
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    return copied;
+  } catch (error) {
+    console.warn("Fallback 텍스트 복사 실패", error);
+    return false;
   }
 }
 

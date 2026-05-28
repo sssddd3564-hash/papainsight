@@ -9,11 +9,14 @@ const users = [
   { id: "오찬", password: "7468", name: "오찬", role: "staff" },
 ];
 
-const materialStorageKey = "papainsight.salesMaterials.v1";
+const appVersion = "0.1";
+const materialStorageKey = "papainsight.salesMaterials.v2";
+const deletedMaterialStorageKey = "papainsight.deletedMaterials.v1";
+const deletedAssetStorageKey = "papainsight.deletedAssetIds.v1";
 
 const materialCategories = [
-  { id: "product-sheet", name: "파파 전체 상품 이미지표", hint: "첫 번째 대표 이미지표 영역입니다." },
   { id: "business-license", name: "사업자등록증", hint: "회사별 사업자등록증을 보관합니다." },
+  { id: "product-sheet", name: "파파 전체 상품 이미지표", hint: "첫 번째 대표 이미지표 영역입니다." },
   { id: "place-reward", name: "플레이스 리워드", hint: "플레이스 리워드 영업자료를 등록합니다." },
   { id: "place-blog", name: "플레이스 블로그 배포", hint: "플레이스 블로그 배포 이미지표를 등록합니다." },
   { id: "place-receipt", name: "플레이스 영수증", hint: "플레이스 영수증 관련 자료를 등록합니다." },
@@ -33,6 +36,7 @@ const defaultMaterials = [
     image: "assets/business-licenses/papa-company-license.jpg",
     source: "asset",
     createdAt: "2024-08-16",
+    createdBy: "기본 등록",
   },
   {
     id: "mom-marketing-license",
@@ -42,24 +46,7 @@ const defaultMaterials = [
     image: "assets/business-licenses/mom-marketing-license.png",
     source: "asset",
     createdAt: "2023-07-16",
-  },
-];
-
-const resources = [
-  {
-    category: "제안서",
-    title: "신규 거래처 제안서 기본형",
-    description: "첫 미팅 또는 카카오 상담 이후 전달하기 좋은 표준 제안 자료입니다.",
-  },
-  {
-    category: "안내자료",
-    title: "서비스 운영 프로세스 안내",
-    description: "계약 이후 진행 단계와 담당자별 역할을 정리한 내부 공유 자료입니다.",
-  },
-  {
-    category: "견적",
-    title: "2026 견적 산정 기준표",
-    description: "B2B, B2C 유형별 기본 견적 기준과 옵션 금액을 확인합니다.",
+    createdBy: "기본 등록",
   },
 ];
 
@@ -70,7 +57,7 @@ const papaAiDocuments = [
     fileName: "블로그_실행사_핵심스펙_제한사항_환불_분할.md",
     path: "assets/papa-ai/blog-executor-specs.html",
     tablePath: "assets/papa-ai/blog-executor-specs.md",
-    description: "블로그 배포, 실계정 기자단 배포 관련 실행사별 제한사항, 환불, 분할, CS Q&A",
+    description: "블로그 배포, 실제정 기자단 배포 관련 제한사항, 환불, 분할, CS Q&A",
   },
   {
     id: "product-specs",
@@ -78,16 +65,27 @@ const papaAiDocuments = [
     fileName: "상품별_핵심스펙_제한사항_환불_효율_분할.md",
     path: "assets/papa-ai/product-specs.html",
     tablePath: "assets/papa-ai/product-specs.md",
-    description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본효율, 타수분할",
+    description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본 효율, 타수분할",
   },
 ];
 
+const clientOwners = ["이신", "정완", "현민", "오찬", "도영"];
+const clientStatusGroups = ["거래중", "상담중", "대기"];
 const clients = [
-  { name: "오렌지파트너스", type: "B2B", status: "진행 중", statusClass: "active", renewal: "2026-06-15", owner: "김팀장" },
-  { name: "블루하우스", type: "B2C", status: "자료 대기", statusClass: "pending", renewal: "2026-06-02", owner: "이매니저" },
-  { name: "그린커머스", type: "B2B", status: "완료", statusClass: "done", renewal: "2026-07-01", owner: "박대리" },
-  { name: "스타트홈", type: "B2C", status: "연장 확인 필요", statusClass: "risk", renewal: "2026-05-30", owner: "최매니저" },
+  { id: 1, name: "청라뷰티랩", type: "B2C", status: "거래중", owner: "이신", memo: "플레이스 리워드 진행" },
+  { id: 2, name: "브라운하우스", type: "B2C", status: "상담중", owner: "이신", memo: "블로그 배포 견적 확인" },
+  { id: 3, name: "더라인컴퍼니", type: "B2B", status: "거래중", owner: "정완", memo: "월 단위 슬롯 운영" },
+  { id: 4, name: "그린커머스", type: "B2B", status: "대기", owner: "정완", memo: "계약서 회신 대기" },
+  { id: 5, name: "루미에르살롱", type: "B2C", status: "거래중", owner: "현민", memo: "영수증 리뷰 관리" },
+  { id: 6, name: "마켓온", type: "B2B", status: "상담중", owner: "현민", memo: "쿠팡 슬롯 문의" },
+  { id: 7, name: "오찬담당 샘플몰", type: "B2C", status: "대기", owner: "오찬", memo: "자료 전달 필요" },
+  { id: 8, name: "도영파트너스", type: "B2B", status: "거래중", owner: "도영", memo: "플레이스 블로그 배포" },
 ];
+
+const iconPaths = {
+  "panel-left-close": '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="m16 10-2 2 2 2"></path>',
+  "panel-left-open": '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="m14 10 2 2-2 2"></path>',
+};
 
 const loginView = document.querySelector("#loginView");
 const dashboardView = document.querySelector("#dashboardView");
@@ -95,10 +93,15 @@ const loginForm = document.querySelector("#loginForm");
 const logoutButton = document.querySelector("#logoutButton");
 const currentUser = document.querySelector("#currentUser");
 const pageTitle = document.querySelector("#pageTitle");
+const sidebar = document.querySelector("#sidebar");
+const sidebarToggle = document.querySelector("#sidebarToggle");
 const salesPage = document.querySelector("#salesPage");
-const papaAiPage = document.querySelector("#papaAiPage");
+const textSalesPage = document.querySelector("#textSalesPage");
 const clientsPage = document.querySelector("#clientsPage");
+const settlementPage = document.querySelector("#settlementPage");
 const navItems = document.querySelectorAll(".nav-item");
+const clientSubnav = document.querySelector("#clientSubnav");
+const clientOwnerTabs = document.querySelector("#clientOwnerTabs");
 const materialsLibrary = document.querySelector("#materialsLibrary");
 const materialModal = document.querySelector("#materialModal");
 const materialForm = document.querySelector("#materialForm");
@@ -108,6 +111,10 @@ const materialFiles = document.querySelector("#materialFiles");
 const openMaterialModalButton = document.querySelector("#openMaterialModal");
 const closeMaterialModalButton = document.querySelector("#closeMaterialModal");
 const cancelMaterialModalButton = document.querySelector("#cancelMaterialModal");
+const openTrashLogButton = document.querySelector("#openTrashLog");
+const trashModal = document.querySelector("#trashModal");
+const closeTrashModalButton = document.querySelector("#closeTrashModal");
+const trashLogList = document.querySelector("#trashLogList");
 const toastMessage = document.querySelector("#toastMessage");
 const aiDocList = document.querySelector("#aiDocList");
 const aiDocTitle = document.querySelector("#aiDocTitle");
@@ -116,23 +123,56 @@ const aiDocSearch = document.querySelector("#aiDocSearch");
 
 const papaAiDocumentCache = new Map();
 let selectedPapaAiDocumentId = papaAiDocuments[0].id;
+let selectedClientOwner = clientOwners[0];
+let currentUserData = users[0];
+let currentPage = "sales";
+let clientSubnavExpanded = false;
+const expandedMaterialIds = new Set();
 
-function getStoredMaterials() {
+function readJson(key, fallback) {
   try {
-    const savedMaterials = JSON.parse(localStorage.getItem(materialStorageKey) || "[]");
-    return Array.isArray(savedMaterials) ? savedMaterials : [];
+    const value = JSON.parse(localStorage.getItem(key) || "null");
+    return value ?? fallback;
   } catch (error) {
-    console.warn("자료 저장소를 읽지 못했습니다.", error);
-    return [];
+    console.warn("저장 데이터를 읽지 못했습니다.", key, error);
+    return fallback;
   }
 }
 
+function writeJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getStoredMaterials() {
+  const materials = readJson(materialStorageKey, []);
+  return Array.isArray(materials) ? materials : [];
+}
+
 function saveStoredMaterials(materials) {
-  localStorage.setItem(materialStorageKey, JSON.stringify(materials));
+  writeJson(materialStorageKey, materials);
+}
+
+function getDeletedAssetIds() {
+  const ids = readJson(deletedAssetStorageKey, []);
+  return Array.isArray(ids) ? ids : [];
+}
+
+function saveDeletedAssetIds(ids) {
+  writeJson(deletedAssetStorageKey, ids);
+}
+
+function getDeleteLogs() {
+  const logs = readJson(deletedMaterialStorageKey, []);
+  return Array.isArray(logs) ? logs : [];
+}
+
+function saveDeleteLogs(logs) {
+  writeJson(deletedMaterialStorageKey, logs);
 }
 
 function getAllMaterials() {
-  return [...defaultMaterials, ...getStoredMaterials()];
+  const deletedAssetIds = new Set(getDeletedAssetIds());
+  return [...defaultMaterials.filter((material) => !deletedAssetIds.has(material.id)), ...getStoredMaterials()];
 }
 
 function escapeHtml(value) {
@@ -144,76 +184,18 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function markdownToHtml(markdown) {
-  const normalizedLines = markdown.replace(/\r\n/g, "\n").split("\n");
-  const htmlBlocks = [];
-
-  for (let index = 0; index < normalizedLines.length; index += 1) {
-    const line = normalizedLines[index];
-    const nextLine = normalizedLines[index + 1] || "";
-
-    if (isMarkdownTableStart(line, nextLine)) {
-      const tableLines = [];
-
-      while (index < normalizedLines.length && normalizedLines[index].trim().startsWith("|")) {
-        tableLines.push(normalizedLines[index]);
-        index += 1;
-      }
-
-      index -= 1;
-      htmlBlocks.push(renderMarkdownTable(tableLines));
-      continue;
-    }
-
-    htmlBlocks.push(escapeHtml(line));
-  }
-
-  return htmlBlocks
-    .join("\n")
-    .replace(/^### (.*)$/gm, "<h6>$1</h6>")
-    .replace(/^## (.*)$/gm, "<h5>$1</h5>")
-    .replace(/^# (.*)$/gm, "<h4>$1</h4>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n/g, "<br />");
+function icon(name) {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name] || ""}</svg>`;
 }
 
-function isMarkdownTableStart(line, nextLine) {
-  return line.trim().startsWith("|") && /^\s*\|?[\s:-]+\|[\s|:-]*$/.test(nextLine);
-}
-
-function splitMarkdownTableRow(line) {
-  return line
-    .trim()
-    .replace(/^\|/, "")
-    .replace(/\|$/, "")
-    .split("|")
-    .map((cell) => escapeHtml(cell.trim()).replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"));
-}
-
-function renderMarkdownTable(tableLines) {
-  const headerCells = splitMarkdownTableRow(tableLines[0]);
-  const bodyRows = tableLines.slice(2).map(splitMarkdownTableRow);
-
-  return `
-    <div class="ai-table-wrap">
-      <table class="ai-markdown-table">
-        <thead>
-          <tr>${headerCells.map((cell) => `<th>${cell}</th>`).join("")}</tr>
-        </thead>
-        <tbody>
-          ${bodyRows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function highlightSearch(html, searchTerm) {
-  const term = searchTerm.trim();
-  if (!term) return html;
-
-  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return html.replace(new RegExp(escapedTerm, "gi"), (match) => `<mark>${match}</mark>`);
+function formatDateTime(value = new Date()) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(value);
 }
 
 function showToast(message) {
@@ -233,22 +215,27 @@ function renderMaterials() {
   const allMaterials = getAllMaterials();
 
   materialsLibrary.innerHTML = materialCategories
-    .map((category) => {
+    .map((category, index) => {
       const categoryMaterials = allMaterials.filter((material) => material.categoryId === category.id);
+      const isOpen = categoryMaterials.length > 0 && index < 3;
       const body = categoryMaterials.length
-        ? `<div class="document-grid">${categoryMaterials.map(renderMaterialCard).join("")}</div>`
-        : `<div class="empty-category">등록된 이미지가 없습니다.</div>`;
+        ? `
+          <div class="category-body ${isOpen ? "" : "collapsed"}">
+            <div class="document-grid">${categoryMaterials.map(renderMaterialCard).join("")}</div>
+          </div>
+        `
+        : "";
 
       return `
-        <section class="resource-category">
-          <div class="category-head">
+        <section class="resource-category ${categoryMaterials.length ? "has-materials" : "is-empty"}" data-category-id="${category.id}">
+          <button class="category-head" type="button" data-action="toggle-category" aria-expanded="${isOpen ? "true" : "false"}">
             <div>
               <span class="category-label">카테고리</span>
               <h4>${category.name}</h4>
               <p>${category.hint}</p>
             </div>
-            <strong>${categoryMaterials.length}개 자료</strong>
-          </div>
+            <span class="category-count">${categoryMaterials.length}개 자료</span>
+          </button>
           ${body}
         </section>
       `;
@@ -257,59 +244,32 @@ function renderMaterials() {
 }
 
 function renderMaterialCard(material) {
+  const createdBy = material.createdBy || "기본 등록";
+  const isExpanded = expandedMaterialIds.has(material.id) || material.expanded;
   return `
-    <article class="document-card">
+    <article class="document-card ${isExpanded ? "expanded" : ""}" data-action="toggle-image" data-material-id="${material.id}">
       <a class="document-preview" href="${material.image}" target="_blank" rel="noreferrer">
         <img src="${material.image}" alt="${escapeHtml(material.title)}" loading="lazy" />
       </a>
       <div class="document-meta">
         <span class="tag">이미지 자료</span>
-        <h5>${escapeHtml(material.title)}</h5>
-        <p>${escapeHtml(material.fileName || "등록 이미지")}</p>
-        <small>등록일: ${material.createdAt}</small>
+        <h5 title="${escapeHtml(material.title)}">${escapeHtml(material.title)}</h5>
+        <p title="${escapeHtml(material.fileName || "등록 이미지")}">${escapeHtml(material.fileName || "등록 이미지")}</p>
+        <small>등록일: ${escapeHtml(material.createdAt)}</small>
+        <small>등록자: ${escapeHtml(createdBy)}</small>
         <div class="document-actions">
+          <button class="mini-button" type="button" data-action="toggle-image" data-material-id="${material.id}">${isExpanded ? "접기" : "펼쳐보기"}</button>
           <button class="mini-button" type="button" data-action="download-image" data-material-id="${material.id}">다운로드</button>
           <button class="mini-button" type="button" data-action="copy-image" data-material-id="${material.id}">복사</button>
-          ${material.source === "local" ? `<button class="mini-button danger" type="button" data-action="delete-image" data-material-id="${material.id}">삭제</button>` : ""}
+          <button class="mini-button danger" type="button" data-action="delete-image" data-material-id="${material.id}">삭제</button>
         </div>
       </div>
     </article>
   `;
 }
 
-function renderResources() {
-  const legacyCategory = document.createElement("section");
-  legacyCategory.className = "resource-category";
-  legacyCategory.innerHTML = `
-    <div class="category-head">
-      <div>
-        <span class="category-label">카테고리</span>
-        <h4>기타 영업자료</h4>
-        <p>문서형 자료를 모아둔 임시 영역입니다.</p>
-      </div>
-      <strong>${resources.length}개 자료</strong>
-    </div>
-    <div class="resource-grid">
-      ${resources
-        .map(
-          (resource) => `
-            <article class="resource-card">
-              <span class="tag">${resource.category}</span>
-              <h4>${resource.title}</h4>
-              <p>${resource.description}</p>
-              <button type="button">자료 보기</button>
-            </article>
-          `,
-        )
-        .join("")}
-    </div>
-  `;
-  materialsLibrary.appendChild(legacyCategory);
-}
-
 function renderSalesLibrary() {
   renderMaterials();
-  renderResources();
 }
 
 function renderPapaAiDocumentList() {
@@ -357,15 +317,14 @@ async function loadPapaAiDocument(docId) {
 function renderPapaAiDocumentContent() {
   const doc = papaAiDocuments.find((item) => item.id === selectedPapaAiDocumentId) || papaAiDocuments[0];
   const cachedDocument = papaAiDocumentCache.get(doc.id) || { html: "", summaryTable: null };
-  const summaryHtml = renderSummaryTable(cachedDocument.summaryTable);
   const contentHtml = `
-    ${summaryHtml}
+    ${renderSummaryTable(cachedDocument.summaryTable)}
     <div class="ai-doc-full">
-      <div class="category-head ai-doc-section-head">
+      <div class="category-head static-head">
         <div>
           <span class="category-label">원문 문서</span>
-          <h4>${doc.fileName}</h4>
-          <p>아래 원문은 PAPAchatbot 문서 내용을 그대로 참고용으로 표시합니다.</p>
+          <h4>${escapeHtml(doc.fileName)}</h4>
+          <p>원문 내용은 참고용으로 하단에 그대로 표시합니다.</p>
         </div>
       </div>
       ${cachedDocument.html}
@@ -409,11 +368,11 @@ function renderSummaryTable(table) {
 
   return `
     <section class="ai-summary-section">
-      <div class="category-head ai-doc-section-head">
+      <div class="category-head static-head">
         <div>
           <span class="category-label">핵심 비교 요약표</span>
           <h4>한눈에 보는 실행사/상품 비교</h4>
-          <p>원본 문서의 핵심 비교 요약표를 표 형태로 먼저 정리했습니다.</p>
+          <p>원문 문서의 비교 요약표를 표 형태로 먼저 정리했습니다.</p>
         </div>
       </div>
       <div class="ai-table-wrap">
@@ -438,27 +397,89 @@ function renderSummaryTable(table) {
   `;
 }
 
-function renderClients() {
-  const clientTable = document.querySelector("#clientTable");
-  const renewalCount = clients.filter((client) => client.statusClass === "risk" || client.statusClass === "pending").length;
+function highlightSearch(html, searchTerm) {
+  const term = searchTerm.trim();
+  if (!term) return html;
 
-  document.querySelector("#totalClients").textContent = clients.length;
-  document.querySelector("#activeClients").textContent = clients.filter((client) => client.statusClass === "active").length;
-  document.querySelector("#renewalClients").textContent = renewalCount;
+  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return html.replace(new RegExp(escapedTerm, "gi"), (match) => `<mark>${match}</mark>`);
+}
 
-  clientTable.innerHTML = clients
+function renderClientNavigation() {
+  clientSubnav.innerHTML = clientOwners
     .map(
-      (client) => `
-        <tr>
-          <td><strong>${client.name}</strong></td>
-          <td>${client.type}</td>
-          <td><span class="status ${client.statusClass}">${client.status}</span></td>
-          <td>${client.renewal}</td>
-          <td>${client.owner}</td>
-        </tr>
+      (owner) => `
+        <button class="subnav-item ${owner === selectedClientOwner ? "active" : ""}" type="button" data-owner="${owner}">
+          <span>${owner}</span>
+        </button>
       `,
     )
     .join("");
+
+  clientOwnerTabs.innerHTML = clientOwners
+    .map(
+      (owner) => `
+        <button class="owner-tab ${owner === selectedClientOwner ? "active" : ""}" type="button" data-owner="${owner}">
+          ${owner}
+        </button>
+      `,
+    )
+    .join("");
+}
+
+function renderClients() {
+  const ownerClients = clients.filter((client) => client.owner === selectedClientOwner);
+  const b2cClients = ownerClients.filter((client) => client.type === "B2C");
+  const b2bClients = ownerClients.filter((client) => client.type === "B2B");
+
+  document.querySelector("#totalClients").textContent = ownerClients.length;
+  document.querySelector("#activeClients").textContent = ownerClients.filter((client) => client.status === "거래중").length;
+  document.querySelector("#pendingClients").textContent = ownerClients.filter((client) => client.status !== "거래중").length;
+  document.querySelector("#b2cCount").textContent = b2cClients.length;
+  document.querySelector("#b2bCount").textContent = b2bClients.length;
+  document.querySelector("#b2cClients").innerHTML = renderClientTypeBoard(b2cClients);
+  document.querySelector("#b2bClients").innerHTML = renderClientTypeBoard(b2bClients);
+  renderClientNavigation();
+}
+
+function renderClientTypeBoard(typeClients) {
+  return clientStatusGroups
+    .map((status) => {
+      const statusClients = typeClients.filter((client) => client.status === status);
+      return `
+        <section class="status-column">
+          <div class="status-column-head">
+            <span>${status}</span>
+            <strong>${statusClients.length}</strong>
+          </div>
+          <div class="status-card-list">
+            ${
+              statusClients.length
+                ? statusClients.map(renderClientCard).join("")
+                : `<div class="empty-client">등록된 거래처가 없습니다.</div>`
+            }
+          </div>
+        </section>
+      `;
+    })
+    .join("");
+}
+
+function renderClientCard(client) {
+  return `
+    <article class="client-card">
+      <span class="status ${getStatusClass(client.status)}">${client.status}</span>
+      <h4>${escapeHtml(client.name)}</h4>
+      <p>${escapeHtml(client.memo)}</p>
+      <small>담당자: ${escapeHtml(client.owner)}</small>
+    </article>
+  `;
+}
+
+function getStatusClass(status) {
+  if (status === "거래중") return "active";
+  if (status === "상담중") return "pending";
+  return "risk";
 }
 
 function openMaterialModal() {
@@ -491,7 +512,8 @@ async function handleMaterialSubmit(event) {
 
   const categoryId = materialCategory.value;
   const title = materialTitle.value.trim();
-  const createdAt = new Date().toISOString().slice(0, 10);
+  const createdAt = formatDateTime();
+  const createdBy = `${currentUserData.name} (${currentUserData.id})`;
   const storedMaterials = getStoredMaterials();
 
   const uploadedMaterials = await Promise.all(
@@ -503,6 +525,7 @@ async function handleMaterialSubmit(event) {
       image: await readFileAsDataUrl(file),
       source: "local",
       createdAt,
+      createdBy,
     })),
   );
 
@@ -558,7 +581,7 @@ async function copyMaterialImage(material) {
   }
 
   const didCopyUrl = await copyTextToClipboard(new URL(material.image, window.location.href).href);
-  showToast(didCopyUrl ? "이미지 주소를 복사했습니다." : "이 브라우저에서는 이미지 복사가 제한됩니다.");
+  showToast(didCopyUrl ? "이미지 주소를 복사했습니다." : "이 브라우저에서는 복사를 지원하지 않습니다.");
 }
 
 async function copyTextToClipboard(text) {
@@ -590,35 +613,93 @@ async function copyTextToClipboard(text) {
   }
 }
 
-function deleteStoredMaterial(materialId) {
-  const nextMaterials = getStoredMaterials().filter((material) => material.id !== materialId);
-  saveStoredMaterials(nextMaterials);
+function deleteMaterial(materialId) {
+  const material = getAllMaterials().find((item) => item.id === materialId);
+  if (!material) return;
+
+  if (!window.confirm(`"${material.title}" 자료를 삭제하시겠습니까?`)) return;
+
+  if (material.source === "asset") {
+    saveDeletedAssetIds([...new Set([...getDeletedAssetIds(), material.id])]);
+  } else {
+    saveStoredMaterials(getStoredMaterials().filter((item) => item.id !== material.id));
+  }
+
+  saveDeleteLogs([
+    {
+      id: `delete-${Date.now()}`,
+      materialTitle: material.title,
+      fileName: material.fileName || "등록 이미지",
+      deletedAt: formatDateTime(),
+      deletedBy: `${currentUserData.name} (${currentUserData.id})`,
+    },
+    ...getDeleteLogs(),
+  ]);
+
   renderSalesLibrary();
+  renderTrashLogs();
   showToast("자료가 삭제되었습니다.");
 }
 
+function renderTrashLogs() {
+  const logs = getDeleteLogs();
+  trashLogList.innerHTML = logs.length
+    ? logs
+        .map(
+          (log) => `
+            <article class="trash-log-card">
+              <strong>${escapeHtml(log.materialTitle)}</strong>
+              <span>${escapeHtml(log.fileName)}</span>
+              <small>삭제일시: ${escapeHtml(log.deletedAt)}</small>
+              <small>삭제자: ${escapeHtml(log.deletedBy)}</small>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-category">삭제 기록이 없습니다.</div>`;
+}
+
+function toggleMaterialExpanded(materialId) {
+  if (expandedMaterialIds.has(materialId)) {
+    expandedMaterialIds.delete(materialId);
+  } else {
+    expandedMaterialIds.add(materialId);
+  }
+
+  renderSalesLibrary();
+}
+
 function handleMaterialClick(event) {
+  const categoryToggle = event.target.closest("[data-action='toggle-category']");
+  if (categoryToggle) {
+    const body = categoryToggle.closest(".resource-category").querySelector(".category-body");
+    if (!body) return;
+    const isCollapsed = body.classList.toggle("collapsed");
+    categoryToggle.setAttribute("aria-expanded", String(!isCollapsed));
+    return;
+  }
+
   const button = event.target.closest("[data-action]");
   if (!button) return;
+  if (button.dataset.action === "toggle-image" && event.target.closest(".document-preview")) {
+    event.preventDefault();
+  }
+  if (button.closest(".document-actions") && button.dataset.action === "toggle-image") {
+    event.preventDefault();
+  }
 
   const materialId = button.dataset.materialId;
   const material = getAllMaterials().find((item) => item.id === materialId);
   if (!material) return;
 
-  if (button.dataset.action === "copy-image") {
-    copyMaterialImage(material);
-  }
-
-  if (button.dataset.action === "download-image") {
-    downloadMaterialImage(material);
-  }
-
-  if (button.dataset.action === "delete-image") {
-    deleteStoredMaterial(material.id);
-  }
+  if (button.dataset.action === "copy-image") copyMaterialImage(material);
+  if (button.dataset.action === "download-image") downloadMaterialImage(material);
+  if (button.dataset.action === "delete-image") deleteMaterial(material.id);
+  if (button.dataset.action === "toggle-image") toggleMaterialExpanded(material.id);
 }
 
 function showDashboard(user) {
+  currentUserData = user;
   currentUser.textContent = `${user.name} (${user.id})`;
   loginView.classList.add("hidden");
   dashboardView.classList.remove("hidden");
@@ -626,27 +707,57 @@ function showDashboard(user) {
 
 function showPage(page) {
   const pageTitles = {
-    sales: "영업자료",
-    "papa-ai": "파파AI",
+    sales: "영업자료 (이미지)",
+    "text-sales": "영업자료 (텍스트)",
     clients: "거래처 관리",
+    settlement: "정산관리",
   };
 
+  const isSameClientClick = page === "clients" && currentPage === "clients";
+  if (isSameClientClick) {
+    clientSubnavExpanded = !clientSubnavExpanded;
+  } else {
+    clientSubnavExpanded = page === "clients";
+  }
+
+  currentPage = page;
   pageTitle.textContent = pageTitles[page] || pageTitles.sales;
   salesPage.classList.toggle("hidden", page !== "sales");
-  papaAiPage.classList.toggle("hidden", page !== "papa-ai");
+  textSalesPage.classList.toggle("hidden", page !== "text-sales");
   clientsPage.classList.toggle("hidden", page !== "clients");
+  settlementPage.classList.toggle("hidden", page !== "settlement");
+  clientSubnav.classList.toggle("collapsed", !clientSubnavExpanded);
 
   navItems.forEach((item) => {
     item.classList.toggle("active", item.dataset.page === page);
   });
 
-  if (page === "papa-ai" && !papaAiDocumentCache.has(selectedPapaAiDocumentId)) {
+  if (page === "text-sales" && !papaAiDocumentCache.has(selectedPapaAiDocumentId)) {
     loadPapaAiDocument(selectedPapaAiDocumentId);
+  }
+
+  if (page === "clients") {
+    renderClients();
   }
 }
 
 function isMatchingPassword(user, password) {
   return user.password === password || user.passwordAliases?.includes(password);
+}
+
+function selectClientOwner(owner) {
+  selectedClientOwner = owner;
+  clientSubnavExpanded = true;
+  renderClients();
+  pageTitle.textContent = "거래처 관리";
+  salesPage.classList.add("hidden");
+  textSalesPage.classList.add("hidden");
+  clientsPage.classList.remove("hidden");
+  settlementPage.classList.add("hidden");
+  clientSubnav.classList.remove("collapsed");
+  navItems.forEach((item) => {
+    item.classList.toggle("active", item.dataset.page === "clients");
+  });
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -672,8 +783,25 @@ logoutButton.addEventListener("click", () => {
   showPage("sales");
 });
 
+sidebarToggle.addEventListener("click", () => {
+  const collapsed = sidebar.classList.toggle("collapsed");
+  sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
+  sidebarToggle.setAttribute("aria-label", collapsed ? "대시보드 펼치기" : "대시보드 접기");
+  sidebarToggle.innerHTML = icon(collapsed ? "panel-left-open" : "panel-left-close");
+});
+
 navItems.forEach((item) => {
   item.addEventListener("click", () => showPage(item.dataset.page));
+});
+
+clientSubnav.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-owner]");
+  if (button) selectClientOwner(button.dataset.owner);
+});
+
+clientOwnerTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-owner]");
+  if (button) selectClientOwner(button.dataset.owner);
 });
 
 openMaterialModalButton.addEventListener("click", openMaterialModal);
@@ -684,6 +812,16 @@ materialModal.addEventListener("click", (event) => {
 });
 materialForm.addEventListener("submit", handleMaterialSubmit);
 materialsLibrary.addEventListener("click", handleMaterialClick);
+
+openTrashLogButton.addEventListener("click", () => {
+  renderTrashLogs();
+  trashModal.classList.remove("hidden");
+});
+closeTrashModalButton.addEventListener("click", () => trashModal.classList.add("hidden"));
+trashModal.addEventListener("click", (event) => {
+  if (event.target === trashModal) trashModal.classList.add("hidden");
+});
+
 aiDocList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-doc-id]");
   if (button) loadPapaAiDocument(button.dataset.docId);
@@ -693,4 +831,5 @@ aiDocSearch.addEventListener("input", renderPapaAiDocumentContent);
 renderCategoryOptions();
 renderSalesLibrary();
 renderPapaAiDocumentList();
+renderClientNavigation();
 renderClients();

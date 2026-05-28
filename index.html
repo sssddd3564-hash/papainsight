@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>파파인사이트</title>
-    <link rel="stylesheet" href="styles.css?v=0.1-nav-group-20260528" />
+    <link rel="stylesheet" href="styles.css?v=0.1-inbound-db-20260528" />
   </head>
   <body>
     <main class="app-shell">
@@ -47,7 +47,11 @@
           </div>
 
           <nav class="nav-menu" aria-label="대시보드 메뉴">
-            <button class="nav-item active" type="button" data-page="sales">
+            <button class="nav-item active" type="button" data-page="inbound">
+              <span class="nav-icon">★</span>
+              <span class="nav-text">인바운드 DB</span>
+            </button>
+            <button class="nav-item" type="button" data-page="sales">
               <span class="nav-icon">1</span>
               <span class="nav-text">영업자료 (이미지)</span>
             </button>
@@ -76,7 +80,7 @@
           <header class="topbar">
             <div>
               <p class="eyebrow">ERP DASHBOARD</p>
-              <h2 id="pageTitle">영업자료 (이미지)</h2>
+              <h2 id="pageTitle">인바운드 DB</h2>
             </div>
             <div class="topbar-actions">
               <span class="version-pill">v0.1</span>
@@ -87,7 +91,38 @@
             </div>
           </header>
 
-          <section class="page-section" id="salesPage">
+          <section class="page-section" id="inboundPage">
+            <div class="section-head">
+              <div>
+                <h3>인바운드 DB 현황</h3>
+                <p>랜딩페이지와 유료 광고를 통해 유입된 문의 DB를 최신 문의순으로 영업자에게 공유합니다.</p>
+              </div>
+              <span class="version-pill">최신순</span>
+            </div>
+
+            <div class="inbound-table-card">
+              <div class="inbound-table-wrap">
+                <table class="inbound-table">
+                  <thead>
+                    <tr>
+                      <th>날짜</th>
+                      <th>이름</th>
+                      <th>전화번호</th>
+                      <th>플레이스URL</th>
+                      <th>메인키워드</th>
+                      <th>업종</th>
+                      <th>구분</th>
+                      <th>월 광고비 예산</th>
+                      <th>문의사항</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inboundTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          <section class="page-section hidden" id="salesPage">
             <div class="section-head">
               <div>
                 <h3>영업자료 이미지 보관함</h3>
@@ -219,6 +254,6 @@
 
     <div class="toast hidden" id="toastMessage"></div>
 
-    <script src="script.js?v=0.1-nav-group-20260528"></script>
+    <script src="script.js?v=0.1-inbound-db-20260528"></script>
   </body>
 </html>

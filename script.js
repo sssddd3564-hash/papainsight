@@ -82,6 +82,53 @@ const clients = [
   { id: 8, name: "도영파트너스", type: "B2B", status: "거래중", owner: "도영", memo: "플레이스 블로그 배포" },
 ];
 
+const inboundLeads = [
+  {
+    receivedAt: "2026-05-28 16:40",
+    name: "김민서",
+    phone: "010-4821-9374",
+    placeUrl: "https://m.place.naver.com/place/1234567890",
+    mainKeyword: "인천 피부관리",
+    industry: "뷰티/에스테틱",
+    advertiserType: "직광고주",
+    monthlyBudget: "300만원",
+    inquiry: "플레이스 순위와 블로그 배포를 함께 문의",
+  },
+  {
+    receivedAt: "2026-05-28 15:25",
+    name: "박준호",
+    phone: "010-7392-1846",
+    placeUrl: "https://m.place.naver.com/place/2345678901",
+    mainKeyword: "청라 맛집",
+    industry: "음식점",
+    advertiserType: "직광고주",
+    monthlyBudget: "150만원",
+    inquiry: "플레이스 리워드 가능 여부 확인 요청",
+  },
+  {
+    receivedAt: "2026-05-28 13:10",
+    name: "이하늘",
+    phone: "010-2618-5409",
+    placeUrl: "https://m.place.naver.com/place/3456789012",
+    mainKeyword: "송도 치과",
+    industry: "병원/의료",
+    advertiserType: "대행사",
+    monthlyBudget: "500만원",
+    inquiry: "여러 지점 견적과 운영 방식 문의",
+  },
+  {
+    receivedAt: "2026-05-27 18:05",
+    name: "최유진",
+    phone: "010-5840-6712",
+    placeUrl: "https://m.place.naver.com/place/4567890123",
+    mainKeyword: "부평 PT",
+    industry: "피트니스",
+    advertiserType: "직광고주",
+    monthlyBudget: "200만원",
+    inquiry: "블로그 배포와 영수증 리뷰 병행 가능 여부",
+  },
+];
+
 const iconPaths = {
   "panel-left-close": '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="m16 10-2 2 2 2"></path>',
   "panel-left-open": '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="m14 10 2 2-2 2"></path>',
@@ -95,6 +142,7 @@ const currentUser = document.querySelector("#currentUser");
 const pageTitle = document.querySelector("#pageTitle");
 const sidebar = document.querySelector("#sidebar");
 const sidebarToggle = document.querySelector("#sidebarToggle");
+const inboundPage = document.querySelector("#inboundPage");
 const salesPage = document.querySelector("#salesPage");
 const textSalesPage = document.querySelector("#textSalesPage");
 const clientsPage = document.querySelector("#clientsPage");
@@ -120,12 +168,13 @@ const aiDocList = document.querySelector("#aiDocList");
 const aiDocTitle = document.querySelector("#aiDocTitle");
 const aiDocContent = document.querySelector("#aiDocContent");
 const aiDocSearch = document.querySelector("#aiDocSearch");
+const inboundTableBody = document.querySelector("#inboundTableBody");
 
 const papaAiDocumentCache = new Map();
 let selectedPapaAiDocumentId = papaAiDocuments[0].id;
 let selectedClientOwner = clientOwners[0];
 let currentUserData = users[0];
-let currentPage = "sales";
+let currentPage = "inbound";
 let clientSubnavExpanded = false;
 const expandedMaterialIds = new Set();
 
@@ -476,6 +525,28 @@ function renderClientCard(client) {
   `;
 }
 
+function renderInboundLeads() {
+  const sortedLeads = [...inboundLeads].sort((a, b) => new Date(b.receivedAt.replace(" ", "T")) - new Date(a.receivedAt.replace(" ", "T")));
+
+  inboundTableBody.innerHTML = sortedLeads
+    .map(
+      (lead) => `
+        <tr>
+          <td><strong>${escapeHtml(lead.receivedAt)}</strong></td>
+          <td>${escapeHtml(lead.name)}</td>
+          <td>${escapeHtml(lead.phone)}</td>
+          <td><a href="${escapeHtml(lead.placeUrl)}" target="_blank" rel="noreferrer">플레이스 보기</a></td>
+          <td>${escapeHtml(lead.mainKeyword)}</td>
+          <td>${escapeHtml(lead.industry)}</td>
+          <td><span class="status ${lead.advertiserType === "직광고주" ? "active" : "pending"}">${escapeHtml(lead.advertiserType)}</span></td>
+          <td>${escapeHtml(lead.monthlyBudget)}</td>
+          <td>${escapeHtml(lead.inquiry)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
 function getStatusClass(status) {
   if (status === "거래중") return "active";
   if (status === "상담중") return "pending";
@@ -707,6 +778,7 @@ function showDashboard(user) {
 
 function showPage(page) {
   const pageTitles = {
+    inbound: "인바운드 DB",
     sales: "영업자료 (이미지)",
     "text-sales": "영업자료 (텍스트)",
     clients: "거래처 관리",
@@ -721,7 +793,8 @@ function showPage(page) {
   }
 
   currentPage = page;
-  pageTitle.textContent = pageTitles[page] || pageTitles.sales;
+  pageTitle.textContent = pageTitles[page] || pageTitles.inbound;
+  inboundPage.classList.toggle("hidden", page !== "inbound");
   salesPage.classList.toggle("hidden", page !== "sales");
   textSalesPage.classList.toggle("hidden", page !== "text-sales");
   clientsPage.classList.toggle("hidden", page !== "clients");
@@ -736,6 +809,10 @@ function showPage(page) {
     loadPapaAiDocument(selectedPapaAiDocumentId);
   }
 
+  if (page === "inbound") {
+    renderInboundLeads();
+  }
+
   if (page === "clients") {
     renderClients();
   }
@@ -747,10 +824,13 @@ function isMatchingPassword(user, password) {
 
 function selectClientOwner(owner) {
   selectedClientOwner = owner;
+  currentPage = "clients";
   clientSubnavExpanded = true;
   renderClients();
   pageTitle.textContent = "거래처 관리";
+  inboundPage.classList.add("hidden");
   salesPage.classList.add("hidden");
+  inboundPage.classList.add("hidden");
   textSalesPage.classList.add("hidden");
   clientsPage.classList.remove("hidden");
   settlementPage.classList.add("hidden");
@@ -780,7 +860,7 @@ logoutButton.addEventListener("click", () => {
   loginForm.reset();
   dashboardView.classList.add("hidden");
   loginView.classList.remove("hidden");
-  showPage("sales");
+  showPage("inbound");
 });
 
 sidebarToggle.addEventListener("click", () => {
@@ -829,6 +909,7 @@ aiDocList.addEventListener("click", (event) => {
 aiDocSearch.addEventListener("input", renderPapaAiDocumentContent);
 
 renderCategoryOptions();
+renderInboundLeads();
 renderSalesLibrary();
 renderPapaAiDocumentList();
 renderClientNavigation();

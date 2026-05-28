@@ -13,6 +13,7 @@ const appVersion = "0.1";
 const materialStorageKey = "papainsight.salesMaterials.v2";
 const deletedMaterialStorageKey = "papainsight.deletedMaterials.v1";
 const deletedAssetStorageKey = "papainsight.deletedAssetIds.v1";
+const inboundContactStorageKey = "papainsight.inboundContacts.v1";
 
 const materialCategories = [
   { id: "business-license", name: "사업자등록증", hint: "회사별 사업자등록증을 보관합니다." },
@@ -84,6 +85,7 @@ const clients = [
 
 const inboundLeads = [
   {
+    id: "lead-20260528-1640",
     receivedAt: "2026-05-28 16:40",
     name: "김민서",
     phone: "010-4821-9374",
@@ -95,6 +97,7 @@ const inboundLeads = [
     inquiry: "플레이스 순위와 블로그 배포를 함께 문의",
   },
   {
+    id: "lead-20260528-1525",
     receivedAt: "2026-05-28 15:25",
     name: "박준호",
     phone: "010-7392-1846",
@@ -106,6 +109,7 @@ const inboundLeads = [
     inquiry: "플레이스 리워드 가능 여부 확인 요청",
   },
   {
+    id: "lead-20260528-1310",
     receivedAt: "2026-05-28 13:10",
     name: "이하늘",
     phone: "010-2618-5409",
@@ -117,6 +121,7 @@ const inboundLeads = [
     inquiry: "여러 지점 견적과 운영 방식 문의",
   },
   {
+    id: "lead-20260527-1805",
     receivedAt: "2026-05-27 18:05",
     name: "최유진",
     phone: "010-5840-6712",
@@ -217,6 +222,27 @@ function getDeleteLogs() {
 
 function saveDeleteLogs(logs) {
   writeJson(deletedMaterialStorageKey, logs);
+}
+
+function getInboundContacts() {
+  const contacts = readJson(inboundContactStorageKey, {});
+  return contacts && typeof contacts === "object" && !Array.isArray(contacts) ? contacts : {};
+}
+
+function saveInboundContacts(contacts) {
+  writeJson(inboundContactStorageKey, contacts);
+}
+
+function formatDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isTodayInboundLead(lead) {
+  return lead.receivedAt.slice(0, 10) === formatDateKey();
 }
 
 function getAllMaterials() {
@@ -527,12 +553,19 @@ function renderClientCard(client) {
 
 function renderInboundLeads() {
   const sortedLeads = [...inboundLeads].sort((a, b) => new Date(b.receivedAt.replace(" ", "T")) - new Date(a.receivedAt.replace(" ", "T")));
+  const contactLogs = getInboundContacts();
 
   inboundTableBody.innerHTML = sortedLeads
-    .map(
-      (lead) => `
-        <tr>
-          <td><strong>${escapeHtml(lead.receivedAt)}</strong></td>
+    .map((lead) => {
+      const contact = contactLogs[lead.id];
+      const isToday = isTodayInboundLead(lead);
+
+      return `
+        <tr class="${isToday ? "is-today-lead" : ""} ${contact ? "is-contacted-lead" : ""}">
+          <td>
+            <strong>${escapeHtml(lead.receivedAt)}</strong>
+            ${isToday ? '<span class="fresh-badge">오늘 유입</span>' : ""}
+          </td>
           <td>${escapeHtml(lead.name)}</td>
           <td>${escapeHtml(lead.phone)}</td>
           <td><a href="${escapeHtml(lead.placeUrl)}" target="_blank" rel="noreferrer">플레이스 보기</a></td>
@@ -541,10 +574,41 @@ function renderInboundLeads() {
           <td><span class="status ${lead.advertiserType === "직광고주" ? "active" : "pending"}">${escapeHtml(lead.advertiserType)}</span></td>
           <td>${escapeHtml(lead.monthlyBudget)}</td>
           <td>${escapeHtml(lead.inquiry)}</td>
+          <td>
+            <button class="contact-check ${contact ? "checked" : ""}" type="button" data-lead-id="${escapeHtml(lead.id)}">
+              ${contact ? "체크 완료" : "연락 체크"}
+            </button>
+            ${
+              contact
+                ? `<small class="contact-meta">${escapeHtml(contact.userName)} (${escapeHtml(contact.userId)})<br />${escapeHtml(contact.checkedAt)}</small>`
+                : '<small class="contact-meta muted">미연락</small>'
+            }
+          </td>
         </tr>
-      `,
-    )
+      `;
+    })
     .join("");
+}
+
+function toggleInboundContact(leadId) {
+  const contacts = getInboundContacts();
+
+  if (contacts[leadId]) {
+    delete contacts[leadId];
+    saveInboundContacts(contacts);
+    renderInboundLeads();
+    showToast("연락 체크를 해제했습니다.");
+    return;
+  }
+
+  contacts[leadId] = {
+    userId: currentUserData.id,
+    userName: currentUserData.name,
+    checkedAt: formatDateTime(),
+  };
+  saveInboundContacts(contacts);
+  renderInboundLeads();
+  showToast(`${currentUserData.name} 계정으로 연락 체크했습니다.`);
 }
 
 function getStatusClass(status) {
@@ -907,6 +971,12 @@ aiDocList.addEventListener("click", (event) => {
   if (button) loadPapaAiDocument(button.dataset.docId);
 });
 aiDocSearch.addEventListener("input", renderPapaAiDocumentContent);
+
+inboundTableBody.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-lead-id]");
+  if (!button) return;
+  toggleInboundContact(button.dataset.leadId);
+});
 
 renderCategoryOptions();
 renderInboundLeads();

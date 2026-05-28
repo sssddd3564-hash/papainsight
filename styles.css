@@ -1053,7 +1053,7 @@ h2 {
 
 .inbound-table {
   border-collapse: collapse;
-  min-width: 1180px;
+  min-width: 1320px;
   width: 100%;
 }
 
@@ -1082,7 +1082,8 @@ h2 {
 }
 
 .inbound-table tbody tr {
-  transition: background 460ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  transition: background 460ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 460ms cubic-bezier(0.22, 1, 0.36, 1), opacity 460ms ease;
 }
 
 .inbound-table tbody tr:hover td {
@@ -1090,10 +1091,87 @@ h2 {
   box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.55);
 }
 
+.inbound-table tbody tr.is-today-lead td {
+  animation: freshLeadPulse 2.8s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(236, 253, 243, 0.98), rgba(240, 253, 250, 0.94));
+  border-bottom-color: rgba(34, 197, 94, 0.28);
+}
+
+.inbound-table tbody tr.is-today-lead td:first-child {
+  box-shadow: inset 4px 0 0 var(--neon-mint);
+}
+
+.inbound-table tbody tr.is-contacted-lead td {
+  background: linear-gradient(90deg, rgba(255, 241, 242, 0.98), rgba(255, 247, 237, 0.72));
+  border-bottom-color: rgba(244, 63, 94, 0.2);
+}
+
+.inbound-table tbody tr.is-contacted-lead td:first-child {
+  box-shadow: inset 4px 0 0 rgba(244, 63, 94, 0.72);
+}
+
+.inbound-table tbody tr.is-contacted-lead:hover td {
+  background: linear-gradient(90deg, rgba(255, 228, 230, 0.98), rgba(255, 237, 213, 0.82));
+}
+
 .inbound-table a {
   color: var(--brand-dark);
   font-weight: 900;
   text-decoration: none;
+}
+
+.fresh-badge {
+  background: linear-gradient(90deg, var(--neon-green), var(--cyan));
+  border-radius: 999px;
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.28);
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 900;
+  margin-top: 6px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.contact-check {
+  align-items: center;
+  background: linear-gradient(180deg, #ffffff, #f4faf9);
+  border: 1px solid rgba(0, 168, 168, 0.24);
+  border-radius: var(--radius);
+  color: var(--brand-dark);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 30px;
+  padding: 0 10px;
+  transition: background 520ms cubic-bezier(0.22, 1, 0.36, 1), border-color 520ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.contact-check:hover {
+  border-color: rgba(34, 197, 94, 0.42);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.18);
+  transform: translateY(-1px);
+}
+
+.contact-check.checked {
+  background: linear-gradient(90deg, #be123c, #fb7185);
+  border-color: rgba(244, 63, 94, 0.48);
+  box-shadow: 0 0 18px rgba(244, 63, 94, 0.18);
+  color: #ffffff;
+}
+
+.contact-meta {
+  color: #475467;
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.45;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+.contact-meta.muted {
+  color: #98a2b3;
 }
 
 .client-owner-tabs {
@@ -1297,6 +1375,18 @@ h2 {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes freshLeadPulse {
+  0% {
+    box-shadow: inset 0 0 0 rgba(34, 197, 94, 0), 0 0 0 rgba(34, 197, 94, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 22px rgba(34, 197, 94, 0.1), 0 0 24px rgba(34, 197, 94, 0.18);
+  }
+  100% {
+    box-shadow: inset 0 0 0 rgba(34, 197, 94, 0), 0 0 0 rgba(34, 197, 94, 0);
   }
 }
 

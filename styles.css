@@ -1,5 +1,7 @@
 :root {
   color-scheme: light;
+  --preview-width: 100%;
+  --preview-scale: 1;
   --bg: #eef5f5;
   --panel: #ffffff;
   --ink: #10202b;
@@ -30,6 +32,9 @@ body {
     linear-gradient(145deg, #edf5f5, #f7fafb 56%, #edf6f1);
   color: var(--ink);
   margin: 0;
+  min-height: 100vh;
+  min-width: 320px;
+  padding-top: 92px;
 }
 
 button,
@@ -47,8 +52,184 @@ button {
   display: none !important;
 }
 
-.app-shell {
+.app-shell,
+.landing-preview {
+  border-left: 1px solid rgba(8, 122, 122, 0.08);
+  border-right: 1px solid rgba(8, 122, 122, 0.08);
+  margin: 0 auto;
   min-height: 100vh;
+  overflow: hidden;
+  transform: scale(var(--preview-scale));
+  transform-origin: top center;
+  transition: width 180ms ease, transform 180ms ease;
+  width: var(--preview-width);
+}
+
+.landing-preview {
+  background: #ffffff;
+  height: calc(100vh - 92px);
+  min-height: 640px;
+}
+
+.landing-preview iframe {
+  border: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.preview-topbar {
+  align-items: center;
+  background: #ffffff;
+  border: 3px solid #ff1f1f;
+  box-shadow: 0 8px 22px rgba(16, 32, 43, 0.12);
+  color: var(--ink);
+  display: flex;
+  gap: 14px;
+  left: 0;
+  min-height: 78px;
+  overflow-x: auto;
+  padding: 9px 8px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 120;
+}
+
+.preview-project {
+  display: grid;
+  flex: 0 0 265px;
+  gap: 4px;
+}
+
+.preview-project strong {
+  color: #111827;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.preview-project span {
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.preview-control-group {
+  align-items: center;
+  background: #f7faff;
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-auto-flow: column;
+  padding: 8px 10px;
+}
+
+.preview-group-label {
+  color: #475467;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.preview-number,
+.preview-section-button,
+.preview-button,
+.preview-apply-button,
+.preview-fit-button {
+  background: #ffffff;
+  border: 1px solid #d8e1ee;
+  border-radius: 8px;
+  color: #101828;
+  font-size: 14px;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.preview-section-button.is-active,
+.preview-button.is-active,
+.preview-fit-button {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.preview-number {
+  min-height: 42px;
+  padding: 0 10px;
+  width: 108px;
+}
+
+.preview-number::-webkit-inner-spin-button,
+.preview-number::-webkit-outer-spin-button {
+  margin: 0;
+}
+
+.preview-px {
+  color: #475467;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+body.preview-tablet .dashboard-view,
+body.preview-mobile .dashboard-view {
+  grid-template-columns: 1fr;
+}
+
+body.preview-tablet .sidebar,
+body.preview-mobile .sidebar {
+  gap: 16px;
+}
+
+body.preview-tablet .brand,
+body.preview-mobile .brand {
+  margin-bottom: 0;
+}
+
+body.preview-tablet .nav-menu,
+body.preview-mobile .nav-menu {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.preview-tablet .logout-button,
+body.preview-mobile .logout-button {
+  margin-top: 0;
+}
+
+body.preview-tablet .resource-grid,
+body.preview-tablet .document-grid,
+body.preview-tablet .document-grid.compact,
+body.preview-tablet .metric-row,
+body.preview-tablet .ai-workbench,
+body.preview-tablet .ai-dashboard,
+body.preview-tablet .client-workspace,
+body.preview-mobile .resource-grid,
+body.preview-mobile .document-grid,
+body.preview-mobile .document-grid.compact,
+body.preview-mobile .metric-row,
+body.preview-mobile .ai-workbench,
+body.preview-mobile .ai-dashboard,
+body.preview-mobile .client-workspace {
+  grid-template-columns: 1fr;
+}
+
+body.preview-mobile .login-panel,
+body.preview-mobile .workspace {
+  padding: 20px;
+}
+
+body.preview-mobile .topbar,
+body.preview-mobile .section-head,
+body.preview-mobile .category-head,
+body.preview-mobile .inbound-toolbar {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+body.preview-mobile .secondary-button,
+body.preview-mobile .ghost-button {
+  width: 100%;
 }
 
 .login-view {

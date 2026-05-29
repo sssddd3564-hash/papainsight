@@ -978,6 +978,54 @@ inboundTableBody.addEventListener("click", (event) => {
   toggleInboundContact(button.dataset.leadId);
 });
 
+const previewButtons = document.querySelectorAll(".preview-button");
+const previewSectionButtons = document.querySelectorAll(".preview-section-button");
+const previewApplyButton = document.querySelector("#previewApplyButton");
+const previewFitButton = document.querySelector("#previewFitButton");
+const previewWidthInput = document.querySelector("#previewWidthInput");
+const appShell = document.querySelector(".app-shell");
+const landingPreview = document.querySelector("#landingPreview");
+
+function updatePreviewMode(width) {
+  document.body.classList.toggle("preview-mobile", width <= 520);
+  document.body.classList.toggle("preview-tablet", width > 520 && width <= 900);
+}
+
+function setPreviewWidth(value, button) {
+  const isFull = value === "100%";
+  const width = isFull ? window.innerWidth - 96 : Number(value);
+  const clampedWidth = Math.max(360, Math.min(1920, width || 1440));
+
+  document.documentElement.style.setProperty("--preview-width", isFull ? "100%" : `${clampedWidth}px`);
+  previewWidthInput.value = String(clampedWidth);
+  updatePreviewMode(isFull ? window.innerWidth : clampedWidth);
+
+  previewButtons.forEach((previewButton) => previewButton.classList.remove("is-active"));
+  if (button) button.classList.add("is-active");
+}
+
+function setActivePreviewSection(section) {
+  const isLanding = section === "landing";
+
+  appShell.classList.toggle("hidden", isLanding);
+  landingPreview.classList.toggle("hidden", !isLanding);
+  previewSectionButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.previewSection === section);
+  });
+}
+
+previewButtons.forEach((button) => {
+  button.addEventListener("click", () => setPreviewWidth(button.dataset.previewWidth, button));
+});
+previewSectionButtons.forEach((button) => {
+  button.addEventListener("click", () => setActivePreviewSection(button.dataset.previewSection));
+});
+previewApplyButton.addEventListener("click", () => setPreviewWidth(previewWidthInput.value));
+previewWidthInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") setPreviewWidth(previewWidthInput.value);
+});
+previewFitButton.addEventListener("click", () => setPreviewWidth("100%", previewFitButton));
+
 renderCategoryOptions();
 renderInboundLeads();
 renderSalesLibrary();

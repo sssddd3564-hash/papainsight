@@ -3,3 +3,10 @@ node_modules/
 .env
 .DS_Store
 Thumbs.db
+_backup_before_github_*/
+_github_latest_*/
+_landing_latest_*/
+_push_workspace_*/
+github-papainsight/
+chrome-*.html
+*.png

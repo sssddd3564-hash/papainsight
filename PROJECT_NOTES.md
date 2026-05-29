@@ -54,3 +54,12 @@
 - 모든 주요 대시보드 상단에는 현재 버전을 확인할 수 있는 버전 배지를 둔다.
 - 영업자료 이미지 카드는 기본적으로 촘촘하게 보이게 유지하고, 사용자가 펼쳐보기를 누르면 느린 확장 모션으로 이미지를 크게 확인할 수 있게 한다.
 - 거래처 관리 담당자 하위 메뉴는 담당자 클릭 시 접히지 않고 열린 상태를 유지한다.
+- 오른쪽 브라우저 확인용 상단 툴바는 `파파인사이트 프로젝트` 제목, 섹션 전환(`내부 ERP`, `랜딩페이지`), 화면 크기 전환(`데스크톱`, `태블릿`, `모바일`, 직접 px 입력)을 포함한다.
+- 랜딩페이지는 `lcm67088-tech/B2CRanding` GitHub 최신본을 `landing-preview/` 폴더로 내려받아 iframe(아이프레임: 다른 웹페이지를 현재 화면 안에 넣는 HTML 요소)으로 표시한다.
+- 현재 랜딩페이지 미리보기 연결 파일은 `landing-preview/index-v2.html`이며, 이 파일은 `styles-v2.css`, `script-v2.js`를 사용한다.
+- `landing.papainsight.co.kr` 운영 서버에는 `B2CRanding` 최신 v2 작업물을 배포했다. 서버에서는 `index-v2.html`을 운영용 `index.html`로 배치하고, `styles-v2.css`, `script-v2.js`, `assets/`를 함께 배포한다.
+
+## 2026-05-29 GitHub 인수인계 업로드 메모
+
+- 사용자가 다른 PC에서 이어 받을 목적의 업로드를 요청해 현재 작업물을 `sssddd3564-hash/papainsight` 저장소에 반영한다.
+- 저장소 업로드 시 실제 운영/개발에 필요한 파일만 포함하고, `_backup_before_github_*`, `_github_latest_*`, `_landing_latest_*`, `github-papainsight`, 스크린샷, 브라우저 덤프, 압축 파일은 제외한다.

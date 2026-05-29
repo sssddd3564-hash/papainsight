@@ -4,9 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>파파인사이트</title>
-    <link rel="stylesheet" href="styles.css?v=0.1-inbound-contact-red-20260528" />
+    <link rel="stylesheet" href="styles.css?v=0.1-top-preview-switcher-20260528" />
   </head>
   <body>
+    <div class="preview-topbar" aria-label="프로젝트 미리보기 툴바">
+      <div class="preview-project">
+        <strong>파파인사이트 프로젝트</strong>
+        <span>내부 ERP와 랜딩페이지를 전환하며 반응형 크기를 확인합니다.</span>
+      </div>
+      <div class="preview-control-group" aria-label="섹션 선택">
+        <span class="preview-group-label">섹션</span>
+        <button class="preview-section-button is-active" type="button" data-preview-section="erp">내부 ERP</button>
+        <button class="preview-section-button" type="button" data-preview-section="landing">랜딩페이지</button>
+      </div>
+      <div class="preview-control-group" aria-label="화면 크기 선택">
+        <span class="preview-group-label">화면</span>
+        <button class="preview-button is-active" type="button" data-preview-width="100%">데스크톱</button>
+        <button class="preview-button" type="button" data-preview-width="820">태블릿</button>
+        <button class="preview-button" type="button" data-preview-width="390">모바일</button>
+        <input id="previewWidthInput" class="preview-number" type="number" min="360" max="1920" step="10" value="1180" aria-label="미리보기 가로 크기" />
+        <span class="preview-px">px</span>
+        <button class="preview-apply-button" id="previewApplyButton" type="button">적용</button>
+        <button class="preview-fit-button" id="previewFitButton" type="button">맞춤 보기</button>
+      </div>
+    </div>
+
     <main class="app-shell">
       <section class="login-view" id="loginView">
         <div class="login-panel">
@@ -206,6 +228,10 @@
       </section>
     </main>
 
+    <section class="landing-preview hidden" id="landingPreview" aria-label="랜딩페이지 미리보기">
+      <iframe id="landingFrame" title="파파컴퍼니 랜딩페이지" src="landing-preview/index-v2.html?v=20260528"></iframe>
+    </section>
+
     <div class="modal-backdrop hidden" id="materialModal" role="dialog" aria-modal="true" aria-labelledby="materialModalTitle">
       <form class="modal-panel" id="materialForm">
         <div class="modal-head">
@@ -255,6 +281,6 @@
 
     <div class="toast hidden" id="toastMessage"></div>
 
-    <script src="script.js?v=0.1-inbound-contact-red-20260528"></script>
+    <script src="script.js?v=0.1-top-preview-switcher-20260528"></script>
   </body>
 </html>

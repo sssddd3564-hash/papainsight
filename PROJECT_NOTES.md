@@ -63,3 +63,8 @@
 
 - 사용자가 다른 PC에서 이어 받을 목적의 업로드를 요청해 현재 작업물을 `sssddd3564-hash/papainsight` 저장소에 반영한다.
 - 저장소 업로드 시 실제 운영/개발에 필요한 파일만 포함하고, `_backup_before_github_*`, `_github_latest_*`, `_landing_latest_*`, `github-papainsight`, 스크린샷, 브라우저 덤프, 압축 파일은 제외한다.
+
+## 2026-06-01 GitHub 인수인계 메모
+
+- 사용자가 다른 PC에서 바로 이어 작업할 예정이므로 현재 로컬 작업물을 `sssddd3564-hash/papainsight` 저장소에 커밋하고 푸시한다.
+- 현재 루트 작업 폴더에는 `.git`(깃 저장소 메타 폴더)이 없으므로 `_push_workspace_20260529-135950` 클론을 최신화한 뒤 선별 파일을 복사해 커밋한다.

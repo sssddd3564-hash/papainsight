@@ -146,12 +146,36 @@
           </section>
 
           <section class="page-section hidden" id="salesPage">
-            <div class="section-head">
-              <div>
-                <h3>영업자료 이미지 보관함</h3>
-                <p>회사 인원이 카테고리별 이미지를 등록하고, 다운로드/복사/삭제까지 처리할 수 있습니다.</p>
-              </div>
-              <button class="secondary-button" id="openMaterialModal" type="button">자료 추가</button>
+            <div class="material-vault-grid">
+              <article class="material-vault-card pricing-vault active" data-vault-kind="pricing">
+                <div>
+                  <span class="vault-icon">₩</span>
+                  <p class="eyebrow">PRICE & GUIDE</p>
+                  <h3>단가 및 설명 이미지</h3>
+                  <p>상품 단가표, 설명 이미지, 영업 안내 이미지를 한곳에서 관리합니다.</p>
+                </div>
+                <button class="secondary-button" id="openMaterialModal" type="button" data-material-kind="pricing">자료 추가</button>
+              </article>
+
+              <article class="material-vault-card reference-image-vault" data-vault-kind="reference-image">
+                <div>
+                  <span class="vault-icon">▧</span>
+                  <p class="eyebrow">REFERENCE IMAGE</p>
+                  <h3>레퍼런스 이미지</h3>
+                  <p>상품별 참고 이미지와 사례 이미지를 영업 레퍼런스로 공유합니다.</p>
+                </div>
+                <button class="secondary-button reference-button" id="openReferenceMaterialModal" type="button" data-material-kind="reference-image">자료 추가</button>
+              </article>
+
+              <article class="material-vault-card reference-link-vault" data-vault-kind="reference-link">
+                <div>
+                  <span class="vault-icon">↗</span>
+                  <p class="eyebrow">REFERENCE LINK</p>
+                  <h3>레퍼런스 링크</h3>
+                  <p>여러 레퍼런스 URL을 묶음 카드로 등록하고 공유합니다.</p>
+                </div>
+                <button class="secondary-button reference-link-button" id="openReferenceLinkModal" type="button" data-material-kind="reference-link">자료 추가</button>
+              </article>
             </div>
             <div class="sales-library" id="materialsLibrary"></div>
           </section>
@@ -252,12 +276,19 @@
           <input id="materialTitle" name="title" placeholder="예: 파파 전체 상품 이미지표" required />
         </label>
 
-        <label>
+        <label id="materialFilesLabel">
           이미지 파일
-          <input id="materialFiles" name="files" type="file" accept="image/*" multiple required />
+          <input id="materialFiles" name="files" type="file" accept="image/*" multiple />
         </label>
 
-        <p class="modal-note">현재 등록 자료는 이 PC 브라우저에 저장됩니다. 여러 직원이 같은 자료를 공유하려면 다음 단계에서 백엔드/DB 저장소로 전환해야 합니다.</p>
+        <p class="modal-note hidden" id="editMaterialNote">수정 시 새 이미지를 선택하지 않으면 기존 이미지가 유지됩니다.</p>
+
+        <label id="materialLinkLabel">
+          레퍼런스 링크
+          <textarea id="materialLink" name="link" rows="5" placeholder="https://example.com/reference&#10;https://example.com/reference-2"></textarea>
+        </label>
+
+        <p class="modal-note">이미지는 여러 장을 한 번에 등록할 수 있습니다. 레퍼런스 보관함은 이미지 없이 링크만 등록해도 됩니다.</p>
 
         <div class="modal-actions">
           <button class="ghost-button" id="cancelMaterialModal" type="button">취소</button>

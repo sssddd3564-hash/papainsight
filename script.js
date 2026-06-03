@@ -14,6 +14,7 @@ const materialStorageKey = "papainsight.salesMaterials.v2";
 const deletedMaterialStorageKey = "papainsight.deletedMaterials.v1";
 const deletedAssetStorageKey = "papainsight.deletedAssetIds.v1";
 const inboundContactStorageKey = "papainsight.inboundContacts.v1";
+const materialApiEndpoint = "/api/materials";
 
 const materialCategories = [
   { id: "business-license", name: "사업자등록증", hint: "회사별 사업자등록증을 보관합니다." },
@@ -21,6 +22,7 @@ const materialCategories = [
   { id: "place-reward", name: "플레이스 리워드", hint: "플레이스 리워드 영업자료를 등록합니다." },
   { id: "place-blog", name: "플레이스 블로그 배포", hint: "플레이스 블로그 배포 이미지표를 등록합니다." },
   { id: "place-receipt", name: "플레이스 영수증", hint: "플레이스 영수증 관련 자료를 등록합니다." },
+  { id: "clip-top-rank", name: "클립 상위노출", hint: "클립 상위노출 관련 단가, 설명, 레퍼런스 자료를 등록합니다." },
   { id: "naver-shopping", name: "네이버 쇼핑 슬롯", hint: "네이버 쇼핑 슬롯 자료를 등록합니다." },
   { id: "coupang-slot", name: "쿠팡 슬롯", hint: "쿠팡 슬롯 자료를 등록합니다." },
   { id: "xiaohongshu", name: "샤오홍슈 체험단", hint: "샤오홍슈 체험단 자료를 등록합니다." },
@@ -161,7 +163,13 @@ const materialForm = document.querySelector("#materialForm");
 const materialCategory = document.querySelector("#materialCategory");
 const materialTitle = document.querySelector("#materialTitle");
 const materialFiles = document.querySelector("#materialFiles");
+const materialFilesLabel = document.querySelector("#materialFilesLabel");
+const materialLink = document.querySelector("#materialLink");
+const materialLinkLabel = document.querySelector("#materialLinkLabel");
+const editMaterialNote = document.querySelector("#editMaterialNote");
 const openMaterialModalButton = document.querySelector("#openMaterialModal");
+const openReferenceMaterialModalButton = document.querySelector("#openReferenceMaterialModal");
+const openReferenceLinkModalButton = document.querySelector("#openReferenceLinkModal");
 const closeMaterialModalButton = document.querySelector("#closeMaterialModal");
 const cancelMaterialModalButton = document.querySelector("#cancelMaterialModal");
 const openTrashLogButton = document.querySelector("#openTrashLog");
@@ -181,7 +189,21 @@ let selectedClientOwner = clientOwners[0];
 let currentUserData = users[0];
 let currentPage = "inbound";
 let clientSubnavExpanded = false;
+let currentMaterialKind = "pricing";
+let activeMaterialVault = "pricing";
+let editingMaterialId = null;
+let materialSearchTerm = "";
+let materialSearchComposing = false;
+let materialSearchTimer = null;
 const expandedMaterialIds = new Set();
+const selectedMaterialIds = new Set();
+const openCategoryIds = new Set();
+const materialState = {
+  serverAvailable: false,
+  materials: null,
+  deletedAssetIds: null,
+  deleteLogs: null,
+};
 
 function readJson(key, fallback) {
   try {
@@ -194,34 +216,88 @@ function readJson(key, fallback) {
 }
 
 function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn("로컬 백업 저장을 건너뜁니다.", key, error);
+  }
 }
 
 function getStoredMaterials() {
-  const materials = readJson(materialStorageKey, []);
+  const materials = materialState.materials ?? readJson(materialStorageKey, []);
   return Array.isArray(materials) ? materials : [];
 }
 
 function saveStoredMaterials(materials) {
+  materialState.materials = materials;
   writeJson(materialStorageKey, materials);
 }
 
 function getDeletedAssetIds() {
-  const ids = readJson(deletedAssetStorageKey, []);
+  const ids = materialState.deletedAssetIds ?? readJson(deletedAssetStorageKey, []);
   return Array.isArray(ids) ? ids : [];
 }
 
 function saveDeletedAssetIds(ids) {
+  materialState.deletedAssetIds = ids;
   writeJson(deletedAssetStorageKey, ids);
 }
 
 function getDeleteLogs() {
-  const logs = readJson(deletedMaterialStorageKey, []);
+  const logs = materialState.deleteLogs ?? readJson(deletedMaterialStorageKey, []);
   return Array.isArray(logs) ? logs : [];
 }
 
 function saveDeleteLogs(logs) {
+  materialState.deleteLogs = logs;
   writeJson(deletedMaterialStorageKey, logs);
+}
+
+function getMaterialStatePayload() {
+  return {
+    materials: getStoredMaterials(),
+    deletedAssetIds: getDeletedAssetIds(),
+    deleteLogs: getDeleteLogs(),
+  };
+}
+
+function applyMaterialState(payload) {
+  const nextMaterials = Array.isArray(payload.materials) ? payload.materials : [];
+  const nextDeletedAssetIds = Array.isArray(payload.deletedAssetIds) ? payload.deletedAssetIds : [];
+  const nextDeleteLogs = Array.isArray(payload.deleteLogs) ? payload.deleteLogs : [];
+
+  saveStoredMaterials(nextMaterials);
+  saveDeletedAssetIds(nextDeletedAssetIds);
+  saveDeleteLogs(nextDeleteLogs);
+}
+
+async function loadSharedMaterialState() {
+  try {
+    const response = await fetch(materialApiEndpoint, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+    const payload = await response.json();
+    materialState.serverAvailable = true;
+    applyMaterialState(payload);
+  } catch (error) {
+    materialState.serverAvailable = false;
+    console.warn("공유 자료 저장소를 불러오지 못해 로컬 저장소로 동작합니다.", error);
+  }
+}
+
+async function persistSharedMaterialState() {
+  if (!materialState.serverAvailable) return;
+
+  const response = await fetch(materialApiEndpoint, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(getMaterialStatePayload()),
+  });
+
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+  const payload = await response.json();
+  applyMaterialState(payload);
 }
 
 function getInboundContacts() {
@@ -247,7 +323,13 @@ function isTodayInboundLead(lead) {
 
 function getAllMaterials() {
   const deletedAssetIds = new Set(getDeletedAssetIds());
-  return [...defaultMaterials.filter((material) => !deletedAssetIds.has(material.id)), ...getStoredMaterials()];
+  const storedMaterials = getStoredMaterials();
+  const storedById = new Map(storedMaterials.map((material) => [material.id, material]));
+  const baseMaterials = defaultMaterials
+    .filter((material) => !deletedAssetIds.has(material.id))
+    .map((material) => storedById.get(material.id) || material);
+  const customMaterials = storedMaterials.filter((material) => !defaultMaterials.some((defaultMaterial) => defaultMaterial.id === material.id));
+  return [...baseMaterials, ...customMaterials];
 }
 
 function escapeHtml(value) {
@@ -286,13 +368,66 @@ function renderCategoryOptions() {
     .join("");
 }
 
+const materialVaults = [
+  {
+    kind: "pricing",
+    title: "단가 및 설명 이미지",
+    subtitle: "상품 단가표와 설명 이미지를 카테고리별로 정리합니다.",
+    className: "pricing-vault-section",
+  },
+  {
+    kind: "reference-image",
+    title: "레퍼런스 이미지",
+    subtitle: "상품별 참고 이미지와 사례 이미지를 모아봅니다.",
+    className: "reference-image-vault-section",
+  },
+  {
+    kind: "reference-link",
+    title: "레퍼런스 링크",
+    subtitle: "여러 레퍼런스 링크를 묶음 카드로 모아봅니다.",
+    className: "reference-link-vault-section",
+  },
+];
+
+function getMaterialKind(material) {
+  if (material.kind === "reference") {
+    return material.image ? "reference-image" : "reference-link";
+  }
+  return material.kind || "pricing";
+}
+
+function normalizeSearchText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
+
 function renderMaterials() {
   const allMaterials = getAllMaterials();
+  const vault = materialVaults.find((item) => item.kind === activeMaterialVault) || materialVaults[0];
+  const activeMaterials = allMaterials.filter((material) => getMaterialKind(material) === vault.kind);
 
-  materialsLibrary.innerHTML = materialCategories
+  document.querySelectorAll("[data-vault-kind]").forEach((card) => {
+    card.classList.toggle("active", card.dataset.vaultKind === vault.kind);
+  });
+
+  materialsLibrary.innerHTML = renderMaterialVault(vault, activeMaterials);
+}
+
+function renderMaterialVault(vault, materials) {
+  const totalCount = materials.length;
+  const selectedCount = materials.filter((material) => selectedMaterialIds.has(material.id)).length;
+  const normalizedSearch = normalizeSearchText(materialSearchTerm);
+  const filteredCategories = normalizedSearch
+    ? materialCategories.filter((category) => normalizeSearchText(`${category.name} ${category.hint}`).includes(normalizedSearch))
+    : materialCategories;
+  const categoryMarkup = materialCategories
+    .filter((category) => filteredCategories.includes(category))
     .map((category, index) => {
-      const categoryMaterials = allMaterials.filter((material) => material.categoryId === category.id);
-      const isOpen = categoryMaterials.length > 0 && index < 3;
+      const categoryMaterials = materials.filter((material) => material.categoryId === category.id);
+      const categoryKey = `${vault.kind}:${category.id}`;
+      const isOpen = categoryMaterials.length > 0 && (openCategoryIds.has(categoryKey) || index < 3);
+      const selectedCategoryCount = categoryMaterials.filter((material) => selectedMaterialIds.has(material.id)).length;
       const body = categoryMaterials.length
         ? `
           <div class="category-body ${isOpen ? "" : "collapsed"}">
@@ -303,39 +438,99 @@ function renderMaterials() {
 
       return `
         <section class="resource-category ${categoryMaterials.length ? "has-materials" : "is-empty"}" data-category-id="${category.id}">
-          <button class="category-head" type="button" data-action="toggle-category" aria-expanded="${isOpen ? "true" : "false"}">
+          <div class="category-head" role="button" tabindex="0" data-action="toggle-category" aria-expanded="${isOpen ? "true" : "false"}">
             <div>
               <span class="category-label">카테고리</span>
               <h4>${category.name}</h4>
               <p>${category.hint}</p>
             </div>
-            <span class="category-count">${categoryMaterials.length}개 자료</span>
-          </button>
+            <div class="category-actions">
+              <span class="category-count-card">
+                <strong>${categoryMaterials.length}</strong>
+                <small>자료</small>
+              </span>
+              <button class="mini-button category-select-button" type="button" data-action="select-category-materials" data-category-id="${category.id}">
+                ${selectedCategoryCount === categoryMaterials.length && categoryMaterials.length ? "선택 해제" : "전체 선택"}
+              </button>
+            </div>
+          </div>
           ${body}
         </section>
       `;
     })
     .join("");
+
+  return `
+    <section class="material-vault-section ${vault.className}">
+      <div class="vault-section-head">
+        <div>
+          <span class="category-label">보관함</span>
+          <h4>${vault.title}</h4>
+          <p>${vault.subtitle}</p>
+        </div>
+        <div class="bulk-actions">
+          <label class="material-search">
+            <span>카테고리 검색</span>
+            <input id="materialCategorySearch" type="search" value="${escapeHtml(materialSearchTerm)}" list="materialCategorySuggestions" placeholder="예: 클립, 플레이스" autocomplete="off" />
+            <datalist id="materialCategorySuggestions">
+              ${materialCategories.map((category) => `<option value="${escapeHtml(category.name)}"></option>`).join("")}
+            </datalist>
+          </label>
+          <strong>${totalCount}개</strong>
+          <button class="mini-button" type="button" data-action="select-visible-materials">${selectedCount === totalCount && totalCount ? "전체 해제" : "전체 선택"}</button>
+          <button class="mini-button" type="button" data-action="download-selected-materials" ${selectedCount ? "" : "disabled"}>선택 다운로드</button>
+          <button class="mini-button" type="button" data-action="copy-selected-materials" ${selectedCount ? "" : "disabled"}>선택 복사</button>
+        </div>
+      </div>
+      <div class="vault-category-list">${categoryMarkup}</div>
+    </section>
+  `;
 }
 
 function renderMaterialCard(material) {
   const createdBy = material.createdBy || "기본 등록";
+  const updatedBy = material.updatedBy ? `<small>수정자: ${escapeHtml(material.updatedBy)}</small>` : "";
   const isExpanded = expandedMaterialIds.has(material.id) || material.expanded;
-  return `
-    <article class="document-card ${isExpanded ? "expanded" : ""}" data-action="toggle-image" data-material-id="${material.id}">
-      <a class="document-preview" href="${material.image}" target="_blank" rel="noreferrer">
-        <img src="${material.image}" alt="${escapeHtml(material.title)}" loading="lazy" />
-      </a>
-      <div class="document-meta">
-        <span class="tag">이미지 자료</span>
-        <h5 title="${escapeHtml(material.title)}">${escapeHtml(material.title)}</h5>
-        <p title="${escapeHtml(material.fileName || "등록 이미지")}">${escapeHtml(material.fileName || "등록 이미지")}</p>
-        <small>등록일: ${escapeHtml(material.createdAt)}</small>
-        <small>등록자: ${escapeHtml(createdBy)}</small>
-        <div class="document-actions">
+  const isSelected = selectedMaterialIds.has(material.id);
+  const links = Array.isArray(material.links) ? material.links : material.linkUrl ? [material.linkUrl] : [];
+  const isLinkGroup = getMaterialKind(material) === "reference-link";
+  const isLinkOnly = !material.image && links.length;
+  const href = material.image || links[0] || "#";
+  const preview = material.image
+    ? `<img src="${material.image}" alt="${escapeHtml(material.title)}" loading="lazy" />`
+    : `<div class="link-preview"><span>↗</span><strong>링크 묶음</strong><small>${links.length}개 링크</small></div>`;
+  const fileLabel = material.fileName || (links.length ? `${links.length}개 링크` : "등록 자료");
+  const actionButtons = isLinkOnly
+    ? `
+          ${links.length === 1 ? `<a class="mini-button" href="${escapeHtml(links[0])}" target="_blank" rel="noreferrer">링크 열기</a>` : ""}
+          <button class="mini-button" type="button" data-action="copy-link" data-material-id="${material.id}">링크 복사</button>
+      `
+    : `
           <button class="mini-button" type="button" data-action="toggle-image" data-material-id="${material.id}">${isExpanded ? "접기" : "펼쳐보기"}</button>
           <button class="mini-button" type="button" data-action="download-image" data-material-id="${material.id}">다운로드</button>
           <button class="mini-button" type="button" data-action="copy-image" data-material-id="${material.id}">복사</button>
+          ${material.linkUrl ? `<a class="mini-button" href="${escapeHtml(material.linkUrl)}" target="_blank" rel="noreferrer">링크 열기</a>` : ""}
+      `;
+  return `
+    <article class="document-card ${isExpanded ? "expanded" : ""} ${isSelected ? "selected" : ""}" data-material-id="${material.id}">
+      <label class="material-check" title="자료 선택">
+        <input type="checkbox" data-action="select-material" data-material-id="${material.id}" ${isSelected ? "checked" : ""} />
+        <span></span>
+      </label>
+      <a class="document-preview" href="${escapeHtml(href)}" target="_blank" rel="noreferrer">
+        ${preview}
+      </a>
+      <div class="document-meta">
+        <span class="tag">${isLinkOnly ? "링크 자료" : "이미지 자료"}</span>
+        <h5 title="${escapeHtml(material.title)}">${escapeHtml(material.title)}</h5>
+        <p title="${escapeHtml(fileLabel)}">${escapeHtml(fileLabel)}</p>
+        ${isLinkGroup ? `<div class="link-list">${links.map((link) => `<a href="${escapeHtml(link)}" target="_blank" rel="noreferrer">${escapeHtml(link)}</a>`).join("")}</div>` : ""}
+        <small>등록일: ${escapeHtml(material.createdAt)}</small>
+        <small>등록자: ${escapeHtml(createdBy)}</small>
+        ${updatedBy}
+        <div class="document-actions">
+          ${actionButtons}
+          <button class="mini-button" type="button" data-action="edit-image" data-material-id="${material.id}">수정</button>
           <button class="mini-button danger" type="button" data-action="delete-image" data-material-id="${material.id}">삭제</button>
         </div>
       </div>
@@ -617,13 +812,61 @@ function getStatusClass(status) {
   return "risk";
 }
 
-function openMaterialModal() {
+function updateMaterialModalMode() {
+  const isReferenceImage = currentMaterialKind === "reference-image";
+  const isReferenceLink = currentMaterialKind === "reference-link";
+
+  materialModal.classList.toggle("reference-mode", isReferenceImage || isReferenceLink);
+  materialModal.classList.toggle("reference-link-mode", isReferenceLink);
+  const modeLabel = editingMaterialId ? "수정" : "추가";
+  const titleMap = {
+    pricing: `단가 및 설명 자료 ${modeLabel}`,
+    "reference-image": `레퍼런스 이미지 ${modeLabel}`,
+    "reference-link": `레퍼런스 링크 ${modeLabel}`,
+  };
+  document.querySelector("#materialModalTitle").textContent = titleMap[currentMaterialKind] || titleMap.pricing;
+  materialFiles.required = !isReferenceLink && !editingMaterialId;
+  materialFilesLabel.classList.toggle("hidden", isReferenceLink);
+  materialLink.required = isReferenceLink && !editingMaterialId;
+  materialLinkLabel.classList.toggle("hidden", !isReferenceLink);
+  editMaterialNote.classList.toggle("hidden", !editingMaterialId);
+}
+
+function openMaterialModal(kind = "pricing") {
+  editingMaterialId = null;
+  currentMaterialKind = kind;
+  activeMaterialVault = kind;
+  renderSalesLibrary();
   materialForm.reset();
+  updateMaterialModalMode();
   materialModal.classList.remove("hidden");
   materialTitle.focus();
 }
 
+function openEditMaterialModal(materialId) {
+  const material = getAllMaterials().find((item) => item.id === materialId);
+  if (!material) return;
+
+  editingMaterialId = material.id;
+  currentMaterialKind = getMaterialKind(material);
+  activeMaterialVault = currentMaterialKind;
+  renderSalesLibrary();
+  materialForm.reset();
+  materialCategory.value = material.categoryId;
+  materialTitle.value = material.title;
+  materialLink.value = Array.isArray(material.links) ? material.links.join("\n") : material.linkUrl || "";
+  updateMaterialModalMode();
+  materialModal.classList.remove("hidden");
+  materialTitle.focus();
+}
+
+function selectMaterialVault(kind) {
+  activeMaterialVault = kind;
+  renderSalesLibrary();
+}
+
 function closeMaterialModal() {
+  editingMaterialId = null;
   materialModal.classList.add("hidden");
 }
 
@@ -636,12 +879,29 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function parseReferenceLinks(value) {
+  return value
+    .split(/\r?\n|,\s*/)
+    .map((link) => link.trim())
+    .filter(Boolean);
+}
+
 async function handleMaterialSubmit(event) {
   event.preventDefault();
+  const submitButton = materialForm.querySelector("button[type='submit']");
 
   const files = Array.from(materialFiles.files || []);
-  if (!files.length) {
+  const linkLines = parseReferenceLinks(materialLink.value);
+  const linkUrl = linkLines[0] || "";
+  const isReferenceLink = currentMaterialKind === "reference-link";
+
+  if (!files.length && !isReferenceLink && !editingMaterialId) {
     showToast("이미지 파일을 선택해 주세요.");
+    return;
+  }
+
+  if (isReferenceLink && !linkLines.length && !editingMaterialId) {
+    showToast("레퍼런스 링크를 입력해 주세요.");
     return;
   }
 
@@ -649,25 +909,80 @@ async function handleMaterialSubmit(event) {
   const title = materialTitle.value.trim();
   const createdAt = formatDateTime();
   const createdBy = `${currentUserData.name} (${currentUserData.id})`;
-  const storedMaterials = getStoredMaterials();
+  const isEditing = Boolean(editingMaterialId);
+  try {
+    if (submitButton) submitButton.disabled = true;
 
-  const uploadedMaterials = await Promise.all(
-    files.map(async (file, index) => ({
-      id: `local-${Date.now()}-${index}`,
-      categoryId,
-      title: files.length > 1 ? `${title} ${index + 1}` : title,
-      fileName: file.name,
-      image: await readFileAsDataUrl(file),
-      source: "local",
-      createdAt,
-      createdBy,
-    })),
-  );
+    const uploadBatchId = Date.now();
+    const storedMaterials = getStoredMaterials();
+    let nextMaterials = [];
 
-  saveStoredMaterials([...storedMaterials, ...uploadedMaterials]);
-  renderSalesLibrary();
-  closeMaterialModal();
-  showToast("자료가 등록되었습니다.");
+    if (editingMaterialId) {
+      const currentMaterial = getAllMaterials().find((material) => material.id === editingMaterialId);
+      const replacementFile = files[0];
+      const editedMaterial = {
+        ...currentMaterial,
+        id: editingMaterialId,
+        kind: currentMaterialKind,
+        categoryId,
+        title,
+        fileName: replacementFile ? replacementFile.name : currentMaterial.fileName,
+        image: isReferenceLink ? "" : replacementFile ? await readFileAsDataUrl(replacementFile) : currentMaterial.image,
+        linkUrl,
+        links: isReferenceLink ? linkLines : undefined,
+        source: "local",
+        updatedAt: formatDateTime(),
+        updatedBy: createdBy,
+      };
+      nextMaterials = [...storedMaterials.filter((material) => material.id !== editingMaterialId), editedMaterial];
+    } else {
+      const uploadedMaterials = await Promise.all(
+        files.map(async (file, index) => ({
+          id: `local-${uploadBatchId}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+          kind: currentMaterialKind,
+          categoryId,
+          title: files.length > 1 ? `${title} ${index + 1}` : title,
+          fileName: file.name,
+          image: await readFileAsDataUrl(file),
+          linkUrl,
+          source: "local",
+          createdAt,
+          createdBy,
+        })),
+      );
+
+      const linkOnlyMaterial =
+        isReferenceLink && linkLines.length
+          ? [
+              {
+                id: `link-group-${uploadBatchId}-${Math.random().toString(36).slice(2, 8)}`,
+                kind: currentMaterialKind,
+                categoryId,
+                title,
+                fileName: `${linkLines.length}개 링크`,
+                image: "",
+                linkUrl,
+                links: linkLines,
+                source: "local",
+                createdAt,
+                createdBy,
+              },
+            ]
+          : [];
+      nextMaterials = [...storedMaterials, ...uploadedMaterials, ...linkOnlyMaterial];
+    }
+
+    saveStoredMaterials(nextMaterials);
+    await persistSharedMaterialState();
+    renderSalesLibrary();
+    closeMaterialModal();
+    showToast(isEditing ? "자료가 수정되었습니다." : "자료가 등록되었습니다.");
+  } catch (error) {
+    console.error("자료 등록 실패", error);
+    showToast(`자료 등록 중 오류가 발생했습니다. ${error.message || ""}`.trim());
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 async function getMaterialBlob(material) {
@@ -748,7 +1063,7 @@ async function copyTextToClipboard(text) {
   }
 }
 
-function deleteMaterial(materialId) {
+async function deleteMaterial(materialId) {
   const material = getAllMaterials().find((item) => item.id === materialId);
   if (!material) return;
 
@@ -759,6 +1074,7 @@ function deleteMaterial(materialId) {
   } else {
     saveStoredMaterials(getStoredMaterials().filter((item) => item.id !== material.id));
   }
+  selectedMaterialIds.delete(material.id);
 
   saveDeleteLogs([
     {
@@ -771,6 +1087,14 @@ function deleteMaterial(materialId) {
     ...getDeleteLogs(),
   ]);
 
+  try {
+    await persistSharedMaterialState();
+  } catch (error) {
+    console.error("자료 삭제 공유 저장 실패", error);
+    showToast("공유 저장소 반영 중 오류가 발생했습니다.");
+    return;
+  }
+
   renderSalesLibrary();
   renderTrashLogs();
   showToast("자료가 삭제되었습니다.");
@@ -778,20 +1102,44 @@ function deleteMaterial(materialId) {
 
 function renderTrashLogs() {
   const logs = getDeleteLogs();
-  trashLogList.innerHTML = logs.length
-    ? logs
-        .map(
-          (log) => `
-            <article class="trash-log-card">
-              <strong>${escapeHtml(log.materialTitle)}</strong>
-              <span>${escapeHtml(log.fileName)}</span>
-              <small>삭제일시: ${escapeHtml(log.deletedAt)}</small>
-              <small>삭제자: ${escapeHtml(log.deletedBy)}</small>
-            </article>
-          `,
-        )
-        .join("")
-    : `<div class="empty-category">삭제 기록이 없습니다.</div>`;
+  if (!logs.length) {
+    trashLogList.innerHTML = `<div class="empty-category">삭제 기록이 없습니다.</div>`;
+    return;
+  }
+
+  const groupedLogs = logs.reduce((groups, log) => {
+    const owner = log.deletedBy || "알 수 없음";
+    groups[owner] = groups[owner] || [];
+    groups[owner].push(log);
+    return groups;
+  }, {});
+
+  trashLogList.innerHTML = Object.entries(groupedLogs)
+    .map(
+      ([owner, ownerLogs]) => `
+        <section class="trash-owner-group">
+          <div class="trash-owner-head">
+            <strong>${escapeHtml(owner)}</strong>
+            <span>${ownerLogs.length}개 삭제</span>
+          </div>
+          <div class="trash-owner-list">
+            ${ownerLogs
+              .map(
+                (log) => `
+                  <article class="trash-log-card">
+                    <strong>${escapeHtml(log.materialTitle)}</strong>
+                    <span>${escapeHtml(log.fileName)}</span>
+                    <small>삭제일시: ${escapeHtml(log.deletedAt)}</small>
+                    <small>삭제자: ${escapeHtml(log.deletedBy)}</small>
+                  </article>
+                `,
+              )
+              .join("")}
+          </div>
+        </section>
+      `,
+    )
+    .join("");
 }
 
 function toggleMaterialExpanded(materialId) {
@@ -804,21 +1152,166 @@ function toggleMaterialExpanded(materialId) {
   renderSalesLibrary();
 }
 
+function getActiveVaultMaterials() {
+  return getAllMaterials().filter((material) => getMaterialKind(material) === activeMaterialVault);
+}
+
+function toggleMaterialSelection(materialId, checked) {
+  if (checked) {
+    selectedMaterialIds.add(materialId);
+  } else {
+    selectedMaterialIds.delete(materialId);
+  }
+
+  renderSalesLibrary();
+}
+
+function toggleVisibleMaterialSelection() {
+  const visibleMaterials = getActiveVaultMaterials();
+  const allSelected = visibleMaterials.length > 0 && visibleMaterials.every((material) => selectedMaterialIds.has(material.id));
+
+  visibleMaterials.forEach((material) => {
+    if (allSelected) {
+      selectedMaterialIds.delete(material.id);
+    } else {
+      selectedMaterialIds.add(material.id);
+    }
+  });
+
+  renderSalesLibrary();
+}
+
+function toggleCategoryMaterialSelection(categoryId) {
+  const categoryMaterials = getActiveVaultMaterials().filter((material) => material.categoryId === categoryId);
+  const allSelected = categoryMaterials.length > 0 && categoryMaterials.every((material) => selectedMaterialIds.has(material.id));
+
+  categoryMaterials.forEach((material) => {
+    if (allSelected) {
+      selectedMaterialIds.delete(material.id);
+    } else {
+      selectedMaterialIds.add(material.id);
+    }
+  });
+
+  openCategoryIds.add(`${activeMaterialVault}:${categoryId}`);
+  renderSalesLibrary();
+}
+
+function updateMaterialSearch(value, immediate = false) {
+  materialSearchTerm = value;
+  window.clearTimeout(materialSearchTimer);
+
+  const renderSearch = () => {
+    renderSalesLibrary();
+    requestAnimationFrame(() => {
+      const searchInput = document.querySelector("#materialCategorySearch");
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+      }
+    });
+  };
+
+  if (immediate) {
+    renderSearch();
+    return;
+  }
+
+  materialSearchTimer = window.setTimeout(renderSearch, 280);
+}
+
+function getSelectedVisibleMaterials() {
+  return getActiveVaultMaterials().filter((material) => selectedMaterialIds.has(material.id));
+}
+
+async function downloadSelectedMaterials() {
+  const selectedMaterials = getSelectedVisibleMaterials().filter((material) => material.image);
+
+  if (!selectedMaterials.length) {
+    showToast("다운로드할 이미지 자료를 선택해 주세요.");
+    return;
+  }
+
+  for (const material of selectedMaterials) {
+    await downloadMaterialImage(material);
+  }
+
+  showToast(`${selectedMaterials.length}개 이미지 다운로드를 시작했습니다.`);
+}
+
+async function copySelectedMaterials() {
+  const selectedMaterials = getSelectedVisibleMaterials();
+
+  if (!selectedMaterials.length) {
+    showToast("복사할 자료를 선택해 주세요.");
+    return;
+  }
+
+  if (selectedMaterials.length === 1 && selectedMaterials[0].image) {
+    await copyMaterialImage(selectedMaterials[0]);
+    return;
+  }
+
+  const copyText = selectedMaterials
+    .map((material) => {
+      const links = Array.isArray(material.links) ? material.links : material.linkUrl ? [material.linkUrl] : [];
+      return `${material.title}\n${links.length ? links.join("\n") : material.fileName || "이미지 자료"}`;
+    })
+    .join("\n\n");
+  const copied = await copyTextToClipboard(copyText);
+  showToast(copied ? `${selectedMaterials.length}개 자료 정보를 복사했습니다.` : "이 브라우저에서는 복사를 지원하지 않습니다.");
+}
+
 function handleMaterialClick(event) {
+  const categorySelection = event.target.closest("[data-action='select-category-materials']");
+  if (categorySelection) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleCategoryMaterialSelection(categorySelection.dataset.categoryId);
+    return;
+  }
+
   const categoryToggle = event.target.closest("[data-action='toggle-category']");
   if (categoryToggle) {
     const body = categoryToggle.closest(".resource-category").querySelector(".category-body");
     if (!body) return;
     const isCollapsed = body.classList.toggle("collapsed");
     categoryToggle.setAttribute("aria-expanded", String(!isCollapsed));
+    const categoryId = categoryToggle.closest(".resource-category").dataset.categoryId;
+    const categoryKey = `${activeMaterialVault}:${categoryId}`;
+    if (isCollapsed) {
+      openCategoryIds.delete(categoryKey);
+    } else {
+      openCategoryIds.add(categoryKey);
+    }
     return;
   }
 
-  const button = event.target.closest("[data-action]");
-  if (!button) return;
-  if (button.dataset.action === "toggle-image" && event.target.closest(".document-preview")) {
-    event.preventDefault();
+  const selectionInput = event.target.closest("[data-action='select-material']");
+  if (selectionInput) {
+    toggleMaterialSelection(selectionInput.dataset.materialId, selectionInput.checked);
+    return;
   }
+
+  const bulkAction = event.target.closest("[data-action='select-visible-materials'], [data-action='download-selected-materials'], [data-action='copy-selected-materials']");
+  if (bulkAction) {
+    if (bulkAction.dataset.action === "select-visible-materials") toggleVisibleMaterialSelection();
+    if (bulkAction.dataset.action === "download-selected-materials") downloadSelectedMaterials();
+    if (bulkAction.dataset.action === "copy-selected-materials") copySelectedMaterials();
+    return;
+  }
+
+  const preview = event.target.closest(".document-preview");
+  if (preview) {
+    event.preventDefault();
+    const card = preview.closest(".document-card");
+    const materialId = card?.dataset.materialId;
+    if (materialId) toggleMaterialSelection(materialId, !selectedMaterialIds.has(materialId));
+    return;
+  }
+
+  const button = event.target.closest("button[data-action], a[data-action]");
+  if (!button) return;
   if (button.closest(".document-actions") && button.dataset.action === "toggle-image") {
     event.preventDefault();
   }
@@ -827,10 +1320,15 @@ function handleMaterialClick(event) {
   const material = getAllMaterials().find((item) => item.id === materialId);
   if (!material) return;
 
+  if (button.dataset.action === "copy-link") {
+    const links = Array.isArray(material.links) ? material.links : material.linkUrl ? [material.linkUrl] : [];
+    copyTextToClipboard(links.join("\n")).then((copied) => showToast(copied ? "레퍼런스 링크를 복사했습니다." : "이 브라우저에서는 복사를 지원하지 않습니다."));
+  }
   if (button.dataset.action === "copy-image") copyMaterialImage(material);
   if (button.dataset.action === "download-image") downloadMaterialImage(material);
+  if (button.dataset.action === "edit-image") openEditMaterialModal(material.id);
   if (button.dataset.action === "delete-image") deleteMaterial(material.id);
-  if (button.dataset.action === "toggle-image") toggleMaterialExpanded(material.id);
+  if (button.dataset.action === "toggle-image" && material.image) toggleMaterialExpanded(material.id);
 }
 
 function showDashboard(user) {
@@ -938,6 +1436,13 @@ navItems.forEach((item) => {
   item.addEventListener("click", () => showPage(item.dataset.page));
 });
 
+document.querySelectorAll("[data-vault-kind]").forEach((card) => {
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("button")) return;
+    selectMaterialVault(card.dataset.vaultKind);
+  });
+});
+
 clientSubnav.addEventListener("click", (event) => {
   const button = event.target.closest("[data-owner]");
   if (button) selectClientOwner(button.dataset.owner);
@@ -948,7 +1453,9 @@ clientOwnerTabs.addEventListener("click", (event) => {
   if (button) selectClientOwner(button.dataset.owner);
 });
 
-openMaterialModalButton.addEventListener("click", openMaterialModal);
+openMaterialModalButton.addEventListener("click", () => openMaterialModal("pricing"));
+openReferenceMaterialModalButton.addEventListener("click", () => openMaterialModal("reference-image"));
+openReferenceLinkModalButton.addEventListener("click", () => openMaterialModal("reference-link"));
 closeMaterialModalButton.addEventListener("click", closeMaterialModal);
 cancelMaterialModalButton.addEventListener("click", closeMaterialModal);
 materialModal.addEventListener("click", (event) => {
@@ -956,6 +1463,20 @@ materialModal.addEventListener("click", (event) => {
 });
 materialForm.addEventListener("submit", handleMaterialSubmit);
 materialsLibrary.addEventListener("click", handleMaterialClick);
+materialsLibrary.addEventListener("compositionstart", (event) => {
+  if (event.target.id === "materialCategorySearch") materialSearchComposing = true;
+});
+materialsLibrary.addEventListener("compositionend", (event) => {
+  if (event.target.id === "materialCategorySearch") {
+    materialSearchComposing = false;
+    updateMaterialSearch(event.target.value, true);
+  }
+});
+materialsLibrary.addEventListener("input", (event) => {
+  if (event.target.id === "materialCategorySearch" && !materialSearchComposing) {
+    updateMaterialSearch(event.target.value);
+  }
+});
 
 openTrashLogButton.addEventListener("click", () => {
   renderTrashLogs();
@@ -1026,9 +1547,14 @@ previewWidthInput.addEventListener("keydown", (event) => {
 });
 previewFitButton.addEventListener("click", () => setPreviewWidth("100%", previewFitButton));
 
-renderCategoryOptions();
-renderInboundLeads();
-renderSalesLibrary();
-renderPapaAiDocumentList();
-renderClientNavigation();
-renderClients();
+async function initializeApp() {
+  renderCategoryOptions();
+  renderInboundLeads();
+  await loadSharedMaterialState();
+  renderSalesLibrary();
+  renderPapaAiDocumentList();
+  renderClientNavigation();
+  renderClients();
+}
+
+initializeApp();

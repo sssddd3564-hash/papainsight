@@ -10,3 +10,4 @@ _push_workspace_*/
 github-papainsight/
 chrome-*.html
 *.png
+data/materials-state.json

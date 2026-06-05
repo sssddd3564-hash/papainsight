@@ -101,7 +101,6 @@
         <div class="workspace">
           <header class="topbar">
             <div>
-              <p class="eyebrow">ERP DASHBOARD</p>
               <h2 id="pageTitle">인바운드 DB</h2>
             </div>
             <div class="topbar-actions">
@@ -146,54 +145,13 @@
           </section>
 
           <section class="page-section hidden" id="salesPage">
-            <div class="material-vault-grid">
-              <article class="material-vault-card pricing-vault active" data-vault-kind="pricing">
-                <div>
-                  <span class="vault-icon">₩</span>
-                  <p class="eyebrow">PRICE & GUIDE</p>
-                  <h3>단가 및 설명 이미지</h3>
-                  <p>상품 단가표, 설명 이미지, 영업 안내 이미지를 한곳에서 관리합니다.</p>
-                </div>
-                <button class="secondary-button" id="openMaterialModal" type="button" data-material-kind="pricing">자료 추가</button>
-              </article>
-
-              <article class="material-vault-card reference-image-vault" data-vault-kind="reference-image">
-                <div>
-                  <span class="vault-icon">▧</span>
-                  <p class="eyebrow">REFERENCE IMAGE</p>
-                  <h3>레퍼런스 이미지</h3>
-                  <p>상품별 참고 이미지와 사례 이미지를 영업 레퍼런스로 공유합니다.</p>
-                </div>
-                <button class="secondary-button reference-button" id="openReferenceMaterialModal" type="button" data-material-kind="reference-image">자료 추가</button>
-              </article>
-
-              <article class="material-vault-card reference-link-vault" data-vault-kind="reference-link">
-                <div>
-                  <span class="vault-icon">↗</span>
-                  <p class="eyebrow">REFERENCE LINK</p>
-                  <h3>레퍼런스 링크</h3>
-                  <p>여러 레퍼런스 URL을 묶음 카드로 등록하고 공유합니다.</p>
-                </div>
-                <button class="secondary-button reference-link-button" id="openReferenceLinkModal" type="button" data-material-kind="reference-link">자료 추가</button>
-              </article>
-            </div>
             <div class="sales-library" id="materialsLibrary"></div>
           </section>
 
           <section class="page-section hidden" id="textSalesPage">
-            <div class="text-dashboard">
-              <div class="ai-doc-list" id="aiDocList"></div>
-
-              <article class="ai-doc-viewer">
-                <div class="ai-doc-toolbar">
-                  <div>
-                    <span class="category-label">문서</span>
-                    <h4 id="aiDocTitle">영업자료 문서</h4>
-                  </div>
-                  <input id="aiDocSearch" type="search" placeholder="문서 내 검색" />
-                </div>
-                <div class="ai-doc-content" id="aiDocContent">문서를 불러오는 중입니다.</div>
-              </article>
+            <div class="sales-text-dashboard">
+              <div class="sales-text-tabs hidden" id="salesTextTabs"></div>
+              <div class="sales-textContent" id="salesTextContent"></div>
             </div>
           </section>
 

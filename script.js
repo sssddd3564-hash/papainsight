@@ -7,6 +7,7 @@ const users = [
   { id: "정완", password: "9630", name: "정완", role: "staff" },
   { id: "현민", password: "4634", name: "현민", role: "staff" },
   { id: "오찬", password: "7468", name: "오찬", role: "staff" },
+  { id: "도영", password: "8462", name: "도영", role: "staff" },
 ];
 
 const appVersion = "0.1";
@@ -16,19 +17,97 @@ const deletedAssetStorageKey = "papainsight.deletedAssetIds.v1";
 const inboundContactStorageKey = "papainsight.inboundContacts.v1";
 const materialApiEndpoint = "/api/materials";
 
-const materialCategories = [
-  { id: "business-license", name: "사업자등록증", hint: "회사별 사업자등록증을 보관합니다." },
-  { id: "product-sheet", name: "파파 전체 상품 이미지표", hint: "첫 번째 대표 이미지표 영역입니다." },
-  { id: "place-reward", name: "플레이스 리워드", hint: "플레이스 리워드 영업자료를 등록합니다." },
-  { id: "place-blog", name: "플레이스 블로그 배포", hint: "플레이스 블로그 배포 이미지표를 등록합니다." },
-  { id: "place-receipt", name: "플레이스 영수증", hint: "플레이스 영수증 관련 자료를 등록합니다." },
-  { id: "clip-top-rank", name: "클립 상위노출", hint: "클립 상위노출 관련 단가, 설명, 레퍼런스 자료를 등록합니다." },
-  { id: "naver-shopping", name: "네이버 쇼핑 슬롯", hint: "네이버 쇼핑 슬롯 자료를 등록합니다." },
-  { id: "coupang-slot", name: "쿠팡 슬롯", hint: "쿠팡 슬롯 자료를 등록합니다." },
-  { id: "xiaohongshu", name: "샤오홍슈 체험단", hint: "샤오홍슈 체험단 자료를 등록합니다." },
-  { id: "sns-reward", name: "SNS리워드", hint: "SNS 리워드 자료를 등록합니다." },
-  { id: "carrot-market", name: "당근마켓", hint: "당근마켓 자료를 등록합니다." },
+function createMaterialMidCategories() {
+  return [
+    {
+      id: "place",
+      name: "플레이스",
+      color: "#185FA5",
+      subCategories: [
+        { name: "리워드 (트래픽)", desc: "플레이스 트래픽 리워드 영업자료" },
+        { name: "블로그", desc: "플레이스 블로그 영업자료" },
+        { name: "영수증", desc: "플레이스 영수증 리뷰 영업자료" },
+        { name: "클립", desc: "플레이스 클립 영업자료" },
+        { name: "샤오홍슈", desc: "플레이스 샤오홍슈 영업자료" },
+      ],
+    },
+    {
+      id: "open-market",
+      name: "오픈마켓",
+      color: "#3B6D11",
+      subCategories: [
+        { name: "쇼핑", desc: "네이버 쇼핑 영업자료" },
+        { name: "쿠팡", desc: "쿠팡 영업자료" },
+      ],
+    },
+    {
+      id: "other-platform",
+      name: "그 외 플랫폼",
+      color: "#BA7517",
+      subCategories: [
+        { name: "SNS 리워드", desc: "SNS 리워드 영업자료" },
+        { name: "당근마켓", desc: "당근마켓 영업자료" },
+        { name: "홈페이지 제작", desc: "홈페이지 제작 영업자료" },
+      ],
+    },
+  ];
+}
+
+const CATEGORIES = [
+  {
+    id: "price-guide",
+    name: "단가 및 설명 이미지",
+    icon: "photo",
+    description: "상품 단가표, 설명 이미지, 영업 안내 이미지",
+    hasMid: true,
+    midCategories: createMaterialMidCategories(),
+  },
+  {
+    id: "reference-image",
+    name: "레퍼런스 이미지",
+    icon: "photo-search",
+    description: "상품별 참고 이미지와 사례 이미지",
+    hasMid: true,
+    midCategories: createMaterialMidCategories(),
+  },
+  {
+    id: "reference-link",
+    name: "레퍼런스 링크",
+    icon: "link",
+    description: "여러 레퍼런스 URL을 묶음 카드로 관리",
+    hasMid: true,
+    midCategories: createMaterialMidCategories(),
+  },
 ];
+
+const materialCategoryIdMap = {
+  "리워드 (트래픽)": "place-reward",
+  블로그: "place-blog",
+  영수증: "place-receipt",
+  클립: "clip-top-rank",
+  샤오홍슈: "xiaohongshu",
+  쇼핑: "naver-shopping",
+  쿠팡: "coupang-slot",
+  "SNS 리워드": "sns-reward",
+  당근마켓: "carrot-market",
+  "홈페이지 제작": "homepage-production",
+};
+
+const materialMidDotColors = {
+  place: "#185FA5",
+  "open-market": "#3B6D11",
+  "other-platform": "#BA7517",
+};
+
+const materialCategories = createMaterialMidCategories().flatMap((midCategory) =>
+  midCategory.subCategories.map((subCategory) => ({
+    id: materialCategoryIdMap[subCategory.name],
+    name: subCategory.name,
+    hint: subCategory.desc,
+    midId: midCategory.id,
+    midName: midCategory.name,
+  })),
+);
 
 const defaultMaterials = [
   {
@@ -69,6 +148,68 @@ const papaAiDocuments = [
     path: "assets/papa-ai/product-specs.html",
     tablePath: "assets/papa-ai/product-specs.md",
     description: "실행사별 상품 핵심 스펙, 제한사항, 환불정책, 기본 효율, 타수분할",
+  },
+];
+
+const salesTextGroups = [
+  {
+    id: "reward",
+    title: "리워드(트래픽)",
+    description: "플레이스 유입, 저장, 길찾기, 복합 미션 계열 실행사 핵심 조건입니다.",
+    accent: "green",
+    rows: [
+      { major: "리워드(트래픽)", middle: "트래픽", small: "퀴즈형", executor: "그린피", product: "리워드 트래픽", price: "20원", operation: "플레이스당 최소 50타 / 16:30 당일 가능", refund: "접수 전 취소 가능 / 구동 후 협의", memo: "보수 80~100%, 우수 광고주 100~150%" },
+      { major: "리워드(트래픽)", middle: "트래픽", small: "오퍼월", executor: "엔비티", product: "리워드 트래픽", price: "20원 / 복합 25~30원", operation: "키워드당 일 20타 / 18:00 당일 가능", refund: "접수 전 취소", memo: "분할 최소 50타 기준" },
+      { major: "리워드(트래픽)", middle: "올매체", small: "자동처리", executor: "레피드", product: "올매체 리워드", price: "30원", operation: "100타 / 최소 7일 / 당일·주말 불가", refund: "취소·환불 불가", memo: "키워드 없이 접수 가능" },
+      { major: "리워드(트래픽)", middle: "올매체", small: "프로", executor: "레피드프로", product: "올매체 리워드", price: "33원", operation: "100타 / 최소 7일 / 자동처리", refund: "취소·환불 불가", memo: "레피드 상위 라인" },
+      { major: "리워드(트래픽)", middle: "저장", small: "저장하기", executor: "일론(창해)", product: "리워드 저장하기", price: "38원", operation: "100타 단위 / 12:00 전 당일 가능", refund: "통계 미반영 시 환불 가능", memo: "보수 80%, 통상 90%+" },
+      { major: "리워드(트래픽)", middle: "복합", small: "유입+저장", executor: "코넷", product: "유입+저장 리워드", price: "20원", operation: "10타 단위 / 15:00 당일 가능", refund: "당일차감 후 환불 / 미구동 익일 반영", memo: "미구동 익일 반영 시 100%" },
+      { major: "리워드(트래픽)", middle: "트래픽", small: "유입", executor: "말차", product: "리워드 트래픽", price: "38원", operation: "10타 단위 분산 세팅 가능", refund: "당일취소 / 익일환불", memo: "시장가 40원 기준" },
+      { major: "리워드(트래픽)", middle: "저장", small: "저장", executor: "말차", product: "리워드 저장", price: "38원", operation: "10타 단위 분산 세팅 가능", refund: "당일취소 / 익일환불", memo: "시장가 40원 기준" },
+      { major: "리워드(트래픽)", middle: "신규미션", small: "영업시간", executor: "말차", product: "영업시간 미션", price: "38원", operation: "10타 단위 / 엑셀 발주", refund: "중단 후 환불 불가", memo: "신규 리워드 접수방 이용 필수 / 맛집 효율 우수" },
+      { major: "리워드(트래픽)", middle: "신규미션", small: "길찾기", executor: "말차", product: "신규 길찾기", price: "43원", operation: "당일 가능 / 엑셀 발주", refund: "중단 후 환불 불가", memo: "시장가 45원 기준" },
+      { major: "리워드(트래픽)", middle: "트래픽", small: "호올스", executor: "호올스", product: "리워드 트래픽", price: "33원", operation: "최소 50타 / 주말 키워드 수정 가능", refund: "당일취소 / 익일환불", memo: "구지도 단일키워드 허용, 복합 키워드 권장" },
+      { major: "리워드(트래픽)", middle: "저장", small: "호올스", executor: "호올스", product: "리워드 저장", price: "33원", operation: "최소 100타", refund: "당일취소 / 익일환불", memo: "구지도 키워드만 허용 / 5위권 밖 / 자연유입 불가" },
+      { major: "리워드(트래픽)", middle: "복합미션", small: "다원화", executor: "투플", product: "검색·저장·공유·알림·길찾기", price: "40원", operation: "100타 단위 / 익일구동만", refund: "구동 중 취소·중단 불가", memo: "네이버 플레이스 등록 업체만" },
+      { major: "리워드(트래픽)", middle: "복합미션", small: "스마트콜 포함", executor: "투플 프로", product: "다원화 미션 + 스마트콜", price: "45원", operation: "100타 단위 / 익일구동만", refund: "구동 중 취소·중단 불가", memo: "네이버전화 필수 / ARS 4번 매장위치 ON 필요" },
+      { major: "리워드(트래픽)", middle: "길찾기", small: "유입형", executor: "홈런볼", product: "길찾기 유입형 리워드", price: "23원", operation: "당일 마감 13:00 / 평일 19:00, 주말 17:00", refund: "문서 내 미언급", memo: "호올스와 10~20% 병행 권장" },
+      { major: "리워드(트래픽)", middle: "트래픽", small: "피크", executor: "피크(올데이)", product: "리워드 트래픽", price: "24원/타", operation: "UI 내 자유 / 당일 가능", refund: "잔여포인트 환불 가능", memo: "올데이 라인" },
+      { major: "리워드(트래픽)", middle: "저장", small: "피크", executor: "피크(프리저)", product: "리워드 저장", price: "21원 / 맛집 30원", operation: "UI 내 자유 / 당일 가능", refund: "잔여포인트 환불 가능", memo: "맛집 단가 별도" },
+      { major: "리워드(트래픽)", middle: "AI", small: "스마일", executor: "NNW", product: "AI 리워드 트래픽·저장", price: "트래픽 40원 / 저장 45원", operation: "10타 이상 / 16:00 당일 가능", refund: "익일부터 잔여타수 x 단가 환불", memo: "셀러가 45/50원" },
+      { major: "리워드(트래픽)", middle: "오퍼월", small: "츄잉·푸딩", executor: "일트", product: "트래픽·저장·공유", price: "트래픽 20원 / 저장 30원", operation: "트래픽 100타, 저장 50타 / 18:00 당일 가능", refund: "문서 내 미언급", memo: "트래픽 90~100%, 저장 60~80%" },
+    ],
+  },
+  {
+    id: "blog",
+    title: "블로그",
+    description: "실계정 기자단, AI 배포, 실계정 블로그 배포 실행사 조건입니다.",
+    accent: "cyan",
+    rows: [
+      { major: "블로그", middle: "실계정 기자단", small: "기본", executor: "더리블비", product: "실계정 기자단 배포", price: "800원/건", operation: "업체당 30건 / 17시 마감 / 원칙 익일", refund: "리뷰어 펑크 2건 내외 허용 / 미발행 환불", memo: "500자 이상, 사진 5장 이상" },
+      { major: "블로그", middle: "실계정 기자단", small: "병의원·법률·건기식", executor: "더리블비", product: "특수 업종 배포", price: "1,100원/건", operation: "업체당 30건 / 원칙 익일", refund: "동일", memo: "300~500자, 사진 5장 이상" },
+      { major: "블로그", middle: "실계정 기자단", small: "프리미엄 1000자+", executor: "더리블비", product: "프리미엄 배포", price: "1,500원/건", operation: "업체당 30건 / 17시 마감", refund: "동일", memo: "사진 10장 이상" },
+      { major: "블로그", middle: "실계정 기자단", small: "프리미엄 2000자+", executor: "더리블비", product: "프리미엄 배포", price: "2,000원/건", operation: "업체당 30건 / 17시 마감", refund: "동일", memo: "사진 15장 이상" },
+      { major: "블로그", middle: "준최블", small: "준최4~7", executor: "더리블비", product: "준최블 기자단 배포", price: "5,000원/건", operation: "업체당 10건 / 원칙 익일", refund: "수정·삭제 처리비용 발생", memo: "1,500~2,000자, 사진 15~20장" },
+      { major: "블로그", middle: "AI 배포", small: "일반 사진 1장", executor: "피크마케팅", product: "실리뷰어 AI 배포", price: "350원/건", operation: "전체 10건~ / 일 최소 2건 / 18시 마감", refund: "미발행 건 취소 / 잔여 포인트 환불", memo: "금 18시 이후 월요일 익일" },
+      { major: "블로그", middle: "AI 배포", small: "일반 사진 3장", executor: "피크마케팅", product: "실리뷰어 AI 배포", price: "450원/건", operation: "전체 10건~ / 일 최소 2건", refund: "동일", memo: "사진 수 옵션" },
+      { major: "블로그", middle: "실계정", small: "1장 기본", executor: "피크마케팅", product: "실리뷰어 실계정", price: "350원/건", operation: "일 최소 2건 / 당일 18시", refund: "미발행 건 취소 / 잔여 포인트 환불", memo: "247계정 옵션은 450원" },
+      { major: "블로그", middle: "실계정", small: "3장 기본", executor: "피크마케팅", product: "실리뷰어 실계정", price: "450원/건", operation: "일 최소 2건 / 당일 18시", refund: "동일", memo: "247계정 옵션은 550원" },
+      { major: "블로그", middle: "실계정 블로그", small: "1차 론칭가", executor: "올인원AD", product: "실계정 블로그 배포", price: "600원/건 / 파파 400원", operation: "당일 가능 / 별도 마감 없음", refund: "블라인드 시 AS / AS 3~4개월", memo: "수량 제한 없음" },
+      { major: "블로그", middle: "실계정 블로그", small: "2차 이후 예정", executor: "올인원AD", product: "실계정 블로그 배포", price: "800원/건~", operation: "당일 가능 / 별도 마감 없음", refund: "동일", memo: "수량별 단가 차등 예정" },
+    ],
+  },
+  {
+    id: "receipt",
+    title: "영수증",
+    description: "현재 보유 문서 안의 영수증 관련 운영 포인트만 우선 표기했습니다.",
+    accent: "violet",
+    rows: [
+      { major: "영수증", middle: "리뷰", small: "전용 문서 필요", executor: "올인원AD", product: "영수증 리뷰", price: "전용 문서 참조", operation: "블로그 문서에서 전용 스펙 문서 참조로 안내", refund: "전용 문서 참조", memo: "영수증_리뷰_핵심스펙_제한사항_환불.md 추가 필요" },
+      { major: "영수증", middle: "운영 상태", small: "블로그 중단 시", executor: "올인원AD", product: "영수증 리뷰", price: "전용 문서 참조", operation: "블로그 일시 중단 중에도 영수증 리뷰는 정상 진행으로 언급", refund: "전용 문서 참조", memo: "블로그 배포 문서 내 운영 분리 확인" },
+      { major: "영수증", middle: "맛집 전략", small: "리워드 병행", executor: "일트 문서 언급", product: "맛집 키워드 운영", price: "상품별 문서 참조", operation: "맛집 플레이스는 트래픽 + 영수증리뷰 병행 권장", refund: "상품별 문서 참조", memo: "맛집 순위 관리 시 병행 전략으로 사용" },
+      { major: "영수증", middle: "별점제", small: "운영 변경", executor: "일트 문서 언급", product: "영수증 리뷰 별점제", price: "상품별 문서 참조", operation: "2026-04-06 접수분부터 별점제로 전환 언급", refund: "상품별 문서 참조", memo: "상담 시 별점제 여부 확인 필요" },
+      { major: "영수증", middle: "업종 주의", small: "효율 저하", executor: "가재울 문서 언급", product: "예약자리뷰 점수반영 업종", price: "상품별 문서 참조", operation: "미용실·펜션 등은 일부 리워드 효율 저하 가능", refund: "상품별 문서 참조", memo: "영수증리뷰 점수반영도가 높은 업종은 별도 판단" },
+    ],
   },
 ];
 
@@ -177,20 +318,25 @@ const trashModal = document.querySelector("#trashModal");
 const closeTrashModalButton = document.querySelector("#closeTrashModal");
 const trashLogList = document.querySelector("#trashLogList");
 const toastMessage = document.querySelector("#toastMessage");
-const aiDocList = document.querySelector("#aiDocList");
-const aiDocTitle = document.querySelector("#aiDocTitle");
-const aiDocContent = document.querySelector("#aiDocContent");
-const aiDocSearch = document.querySelector("#aiDocSearch");
+const salesTextTabs = document.querySelector("#salesTextTabs");
+const salesTextContent = document.querySelector("#salesTextContent");
 const inboundTableBody = document.querySelector("#inboundTableBody");
 
-const papaAiDocumentCache = new Map();
-let selectedPapaAiDocumentId = papaAiDocuments[0].id;
+let activeSalesTextGroup = "reward";
+let activeTextMajorCategoryId = "reward";
+let activeTextMidCategoryId = "";
+let activeTextSubCategoryName = "";
+let salesTextSearchTerm = "";
+let salesTextSearchComposing = false;
 let selectedClientOwner = clientOwners[0];
 let currentUserData = users[0];
 let currentPage = "inbound";
 let clientSubnavExpanded = false;
 let currentMaterialKind = "pricing";
 let activeMaterialVault = "pricing";
+let activeMajorCategoryId = CATEGORIES[0].id;
+let activeMidCategoryId = CATEGORIES[0].midCategories[0].id;
+let activeSubCategoryName = CATEGORIES[0].midCategories[0].subCategories[0].name;
 let editingMaterialId = null;
 let materialSearchTerm = "";
 let materialSearchComposing = false;
@@ -198,6 +344,7 @@ let materialSearchTimer = null;
 const expandedMaterialIds = new Set();
 const selectedMaterialIds = new Set();
 const openCategoryIds = new Set();
+const collapsedMaterialGroupIds = new Set();
 const materialState = {
   serverAvailable: false,
   materials: null,
@@ -404,86 +551,192 @@ function normalizeSearchText(value) {
 
 function renderMaterials() {
   const allMaterials = getAllMaterials();
-  const vault = materialVaults.find((item) => item.kind === activeMaterialVault) || materialVaults[0];
-  const activeMaterials = allMaterials.filter((material) => getMaterialKind(material) === vault.kind);
-
-  document.querySelectorAll("[data-vault-kind]").forEach((card) => {
-    card.classList.toggle("active", card.dataset.vaultKind === vault.kind);
-  });
-
-  materialsLibrary.innerHTML = renderMaterialVault(vault, activeMaterials);
+  materialsLibrary.innerHTML = renderMaterialVault(allMaterials);
 }
 
-function renderMaterialVault(vault, materials) {
-  const totalCount = materials.length;
-  const selectedCount = materials.filter((material) => selectedMaterialIds.has(material.id)).length;
-  const normalizedSearch = normalizeSearchText(materialSearchTerm);
-  const filteredCategories = normalizedSearch
-    ? materialCategories.filter((category) => normalizeSearchText(`${category.name} ${category.hint}`).includes(normalizedSearch))
-    : materialCategories;
-  const categoryMarkup = materialCategories
-    .filter((category) => filteredCategories.includes(category))
-    .map((category, index) => {
-      const categoryMaterials = materials.filter((material) => material.categoryId === category.id);
-      const categoryKey = `${vault.kind}:${category.id}`;
-      const isOpen = categoryMaterials.length > 0 && (openCategoryIds.has(categoryKey) || index < 3);
-      const selectedCategoryCount = categoryMaterials.filter((material) => selectedMaterialIds.has(material.id)).length;
-      const body = categoryMaterials.length
-        ? `
-          <div class="category-body ${isOpen ? "" : "collapsed"}">
-            <div class="document-grid">${categoryMaterials.map(renderMaterialCard).join("")}</div>
-          </div>
-        `
-        : "";
+function getMajorMaterialKind(majorCategory) {
+  return majorCategory.id === "price-guide" ? "pricing" : majorCategory.id;
+}
 
+function getActiveMajorCategory() {
+  return CATEGORIES.find((category) => category.id === activeMajorCategoryId) || CATEGORIES[0];
+}
+
+function getActiveMidCategory(majorCategory = getActiveMajorCategory()) {
+  if (!majorCategory.hasMid) return null;
+  return majorCategory.midCategories.find((category) => category.id === activeMidCategoryId) || majorCategory.midCategories[0];
+}
+
+function findSubCategoryMatchInMajor(majorCategory, searchTerm) {
+  const normalizedSearch = normalizeSearchText(searchTerm);
+  if (!majorCategory?.hasMid || !normalizedSearch) return null;
+
+  for (const midCategory of majorCategory.midCategories) {
+    const subCategory = midCategory.subCategories.find((item) => normalizeSearchText(item.name).includes(normalizedSearch));
+    if (subCategory) return { midCategory, subCategory };
+  }
+
+  return null;
+}
+
+function getSubCategoryId(subCategoryName) {
+  return materialCategoryIdMap[subCategoryName];
+}
+
+function getSubCategoryCount(materials, subCategoryName) {
+  const categoryId = getSubCategoryId(subCategoryName);
+  return materials.filter((material) => material.categoryId === categoryId).length;
+}
+
+function renderMaterialVault(allMaterials) {
+  const activeMajor = getActiveMajorCategory();
+  const activeKind = getMajorMaterialKind(activeMajor);
+  const activeMaterials = allMaterials.filter((material) => getMaterialKind(material) === activeKind);
+  const normalizedSearch = normalizeSearchText(materialSearchTerm);
+  const majorCards = CATEGORIES.map((category) => renderMajorSelectionCard(category, allMaterials)).join("");
+  const midRow = activeMajor.hasMid ? renderMidSelectionRow(activeMajor, activeMaterials) : "";
+  const subList = activeMajor.hasMid ? renderSubCategoryList(activeMajor, getActiveMidCategory(activeMajor), activeMaterials, normalizedSearch) : "";
+
+  return `
+    <section class="material-vault-section hierarchy-vault-section">
+      <div class="material-page-head">
+        <h3>영업자료 (이미지)</h3>
+        <label class="material-search fixed-search">
+          <span>소분류 검색</span>
+          <input id="materialCategorySearch" type="search" value="${escapeHtml(materialSearchTerm)}" placeholder="예: 블로그, 쿠팡" autocomplete="off" />
+        </label>
+      </div>
+      <div class="major-selection-grid">${majorCards}</div>
+      ${midRow}
+      ${subList}
+    </section>
+  `;
+}
+
+function renderMajorSelectionCard(category, allMaterials) {
+  const isActive = category.id === activeMajorCategoryId;
+  const kind = getMajorMaterialKind(category);
+  const materialCount = allMaterials.filter((material) => getMaterialKind(material) === kind).length;
+  const midCount = category.hasMid ? category.midCategories.length : 0;
+  const subCount = category.hasMid ? category.midCategories.reduce((sum, midCategory) => sum + midCategory.subCategories.length, 0) : 0;
+  const iconMap = {
+    "price-guide": "₩",
+    "reference-image": "⌕",
+    "reference-link": "↗",
+  };
+  const icon = iconMap[category.id] || "▧";
+
+  return `
+    <button class="major-select-card ${isActive ? "active" : ""}" type="button" data-action="select-major" data-major-id="${category.id}" data-major-theme="${category.id}">
+      <div class="major-select-main">
+        <span class="major-icon" aria-hidden="true">${icon}</span>
+        <div>
+          <strong>${escapeHtml(category.name)}</strong>
+          <p>${escapeHtml(category.description)}</p>
+        </div>
+      </div>
+      <div class="major-badges">
+        <span>${midCount}개 중분류</span>
+        <span>${subCount}개 소분류</span>
+        <span>${materialCount}개 자료</span>
+      </div>
+    </button>
+  `;
+}
+
+function renderMidSelectionRow(majorCategory, materials) {
+  const cards = majorCategory.midCategories
+    .map((midCategory) => {
+      const isActive = midCategory.id === activeMidCategoryId;
+      const count = midCategory.subCategories.reduce((sum, subCategory) => sum + getSubCategoryCount(materials, subCategory.name), 0);
       return `
-        <section class="resource-category ${categoryMaterials.length ? "has-materials" : "is-empty"}" data-category-id="${category.id}">
-          <div class="category-head" role="button" tabindex="0" data-action="toggle-category" aria-expanded="${isOpen ? "true" : "false"}">
-            <div>
-              <span class="category-label">카테고리</span>
-              <h4>${category.name}</h4>
-              <p>${category.hint}</p>
-            </div>
-            <div class="category-actions">
-              <span class="category-count-card">
-                <strong>${categoryMaterials.length}</strong>
-                <small>자료</small>
-              </span>
-              <button class="mini-button category-select-button" type="button" data-action="select-category-materials" data-category-id="${category.id}">
-                ${selectedCategoryCount === categoryMaterials.length && categoryMaterials.length ? "선택 해제" : "전체 선택"}
-              </button>
-            </div>
-          </div>
-          ${body}
-        </section>
+        <button class="mid-select-card ${isActive ? "active" : ""}" type="button" data-action="select-mid" data-mid-id="${midCategory.id}" style="--mid-dot: ${midCategory.color}">
+          <span class="mid-dot" aria-hidden="true"></span>
+          <strong>${escapeHtml(midCategory.name)}</strong>
+          <small>${midCategory.subCategories.length}개 소분류 · ${count}개 자료</small>
+        </button>
       `;
     })
     .join("");
 
   return `
-    <section class="material-vault-section ${vault.className}">
-      <div class="vault-section-head">
+    <div class="mid-selection-grid">
+      ${cards}
+    </div>
+  `;
+}
+
+function renderSubCategoryList(majorCategory, midCategory, materials, normalizedSearch) {
+  if (!midCategory) return "";
+
+  const filteredSubCategories = midCategory.subCategories.filter((subCategory) => !normalizedSearch || normalizeSearchText(subCategory.name).includes(normalizedSearch));
+  const visibleActiveSubCategory = filteredSubCategories.find((subCategory) => subCategory.name === activeSubCategoryName);
+  const selectedSubCategory = visibleActiveSubCategory || filteredSubCategories[0] || null;
+  const firstCategoryId = getSubCategoryId(selectedSubCategory?.name || midCategory.subCategories[0].name);
+  const rows = filteredSubCategories.length
+    ? filteredSubCategories.map((subCategory, index) => renderSubCategoryRow(subCategory, midCategory, materials, index)).join("")
+    : `<div class="empty-category compact-empty">검색 결과가 없습니다</div>`;
+  const selectedPanel = selectedSubCategory ? renderSelectedSubCategoryMaterials(selectedSubCategory, materials) : "";
+
+  return `
+    <section class="subcategory-list-panel" style="--mid-dot: ${midCategory.color}">
+      <div class="subcategory-list-actions">
+        <button class="secondary-button compact-action" type="button" data-action="add-subcategory-material" data-category-id="${firstCategoryId}">자료 추가</button>
+      </div>
+      <div class="subcategory-row-list">${rows}</div>
+      ${selectedPanel}
+    </section>
+  `;
+}
+
+function renderSubCategoryRow(subCategory, midCategory, materials, index) {
+  const categoryId = getSubCategoryId(subCategory.name);
+  const categoryMaterials = materials.filter((material) => material.categoryId === categoryId);
+  const isActive = subCategory.name === activeSubCategoryName;
+
+  return `
+    <div class="subcategory-card ${isActive ? "active" : ""}" role="button" tabindex="0" data-action="select-subcategory" data-subcategory-name="${escapeHtml(subCategory.name)}" data-category-id="${categoryId}">
+      <div class="subcategory-info">
+        <span class="row-number">${index + 1}</span>
         <div>
-          <span class="category-label">보관함</span>
-          <h4>${vault.title}</h4>
-          <p>${vault.subtitle}</p>
-        </div>
-        <div class="bulk-actions">
-          <label class="material-search">
-            <span>카테고리 검색</span>
-            <input id="materialCategorySearch" type="search" value="${escapeHtml(materialSearchTerm)}" list="materialCategorySuggestions" placeholder="예: 클립, 플레이스" autocomplete="off" />
-            <datalist id="materialCategorySuggestions">
-              ${materialCategories.map((category) => `<option value="${escapeHtml(category.name)}"></option>`).join("")}
-            </datalist>
-          </label>
-          <strong>${totalCount}개</strong>
-          <button class="mini-button" type="button" data-action="select-visible-materials">${selectedCount === totalCount && totalCount ? "전체 해제" : "전체 선택"}</button>
-          <button class="mini-button" type="button" data-action="download-selected-materials" ${selectedCount ? "" : "disabled"}>선택 다운로드</button>
-          <button class="mini-button" type="button" data-action="copy-selected-materials" ${selectedCount ? "" : "disabled"}>선택 복사</button>
+          <strong>${escapeHtml(subCategory.name)}</strong>
+          <p>${escapeHtml(subCategory.desc)}</p>
         </div>
       </div>
-      <div class="vault-category-list">${categoryMarkup}</div>
-    </section>
+      <div class="subcategory-actions">
+        <span>${categoryMaterials.length}개 자료</span>
+        <button class="mini-button" type="button" data-action="register-subcategory" data-category-id="${categoryId}">등록</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSelectedSubCategoryMaterials(subCategory, materials) {
+  const categoryId = getSubCategoryId(subCategory.name);
+  const categoryMaterials = materials.filter((material) => material.categoryId === categoryId);
+  const selectedCount = categoryMaterials.filter((material) => selectedMaterialIds.has(material.id)).length;
+  const allSelected = categoryMaterials.length > 0 && selectedCount === categoryMaterials.length;
+  const selectionLabel = allSelected ? "전체 해제" : "전체 선택";
+  const content = categoryMaterials.length
+    ? `<div class="document-grid compact-document-grid">${categoryMaterials.map(renderMaterialCard).join("")}</div>`
+    : `<div class="empty-category compact-empty">등록된 이미지가 없습니다.</div>`;
+
+  return `
+    <div class="subcategory-materials active">
+      <div class="subcategory-materials-head">
+        <div>
+          <span class="category-label">선택 소분류</span>
+          <h5>${escapeHtml(subCategory.name)}</h5>
+        </div>
+        <div class="subcategory-selection-actions">
+          <span class="selection-count">${selectedCount}/${categoryMaterials.length}개 선택</span>
+          <button class="mini-button" type="button" data-action="select-subcategory-materials" data-category-id="${categoryId}" ${categoryMaterials.length ? "" : "disabled"}>${selectionLabel}</button>
+          <button class="mini-button" type="button" data-action="clear-subcategory-materials" data-category-id="${categoryId}" ${selectedCount ? "" : "disabled"}>선택 해제</button>
+          <button class="mini-button" type="button" data-action="register-subcategory" data-category-id="${categoryId}">등록</button>
+        </div>
+      </div>
+      ${content}
+    </div>
   `;
 }
 
@@ -499,7 +752,6 @@ function renderMaterialCard(material) {
   const preview = material.image
     ? `<img src="${material.image}" alt="${escapeHtml(material.title)}" loading="lazy" />`
     : `<div class="link-preview"><span>↗</span><strong>링크 묶음</strong><small>${links.length}개 링크</small></div>`;
-  const fileLabel = material.fileName || (links.length ? `${links.length}개 링크` : "등록 자료");
   const actionButtons = isLinkOnly
     ? `
           ${links.length === 1 ? `<a class="mini-button" href="${escapeHtml(links[0])}" target="_blank" rel="noreferrer">링크 열기</a>` : ""}
@@ -521,9 +773,7 @@ function renderMaterialCard(material) {
         ${preview}
       </a>
       <div class="document-meta">
-        <span class="tag">${isLinkOnly ? "링크 자료" : "이미지 자료"}</span>
         <h5 title="${escapeHtml(material.title)}">${escapeHtml(material.title)}</h5>
-        <p title="${escapeHtml(fileLabel)}">${escapeHtml(fileLabel)}</p>
         ${isLinkGroup ? `<div class="link-list">${links.map((link) => `<a href="${escapeHtml(link)}" target="_blank" rel="noreferrer">${escapeHtml(link)}</a>`).join("")}</div>` : ""}
         <small>등록일: ${escapeHtml(material.createdAt)}</small>
         <small>등록자: ${escapeHtml(createdBy)}</small>
@@ -539,7 +789,11 @@ function renderMaterialCard(material) {
 }
 
 function renderSalesLibrary() {
+  const previousScrollY = window.scrollY;
   renderMaterials();
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: previousScrollY, left: 0, behavior: "auto" });
+  });
 }
 
 function renderPapaAiDocumentList() {
@@ -673,6 +927,305 @@ function highlightSearch(html, searchTerm) {
 
   const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return html.replace(new RegExp(escapedTerm, "gi"), (match) => `<mark>${match}</mark>`);
+}
+
+function renderSalesTextDashboard() {
+  const activeGroup = salesTextGroups.find((group) => group.id === activeSalesTextGroup) || salesTextGroups[0];
+  const rows = activeGroup.rows;
+
+  salesTextTabs.innerHTML = salesTextGroups
+    .map(
+      (group) => `
+        <button class="sales-text-tab ${group.id === activeGroup.id ? "active" : ""}" type="button" data-sales-text-group="${group.id}">
+          <strong>${group.title}</strong>
+          <small>${group.rows.length}개 항목</small>
+        </button>
+      `,
+    )
+    .join("");
+
+  salesTextContent.innerHTML = `
+    <section class="sales-text-panel ${activeGroup.accent}">
+      <div class="sales-text-panel-head">
+        <div>
+          <h4>${activeGroup.title}</h4>
+          <p>${activeGroup.description}</p>
+        </div>
+        <strong>${rows.length}개 표시</strong>
+      </div>
+      <div class="sales-text-table-wrap">
+        <table class="sales-text-table">
+          <thead>
+            <tr>
+              <th>대분류</th>
+              <th>중분류</th>
+              <th>소분류</th>
+              <th>실행사</th>
+              <th>상품</th>
+              <th>단가</th>
+              <th>구동/수량</th>
+              <th>환불/AS</th>
+              <th>영업 메모</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length
+                ? rows.map(renderSalesTextRow).join("")
+                : `<tr><td colspan="9" class="empty-table-cell">검색 결과가 없습니다.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function renderSalesTextRow(row) {
+  return `
+    <tr>
+      <td><span class="major-chip">${escapeHtml(row.major)}</span></td>
+      <td>${escapeHtml(row.middle)}</td>
+      <td>${escapeHtml(row.small)}</td>
+      <td><strong>${escapeHtml(row.executor)}</strong></td>
+      <td>${escapeHtml(row.product)}</td>
+      <td>${escapeHtml(row.price)}</td>
+      <td>${escapeHtml(row.operation)}</td>
+      <td>${escapeHtml(row.refund)}</td>
+      <td>${escapeHtml(row.memo)}</td>
+    </tr>
+  `;
+}
+
+function getActiveTextMajorCategory() {
+  const categories = getSalesTextCategories();
+  return categories.find((category) => category.id === activeTextMajorCategoryId) || categories[0];
+}
+
+function getActiveTextMidCategory(majorCategory = getActiveTextMajorCategory()) {
+  if (!majorCategory.hasMid) return null;
+  return majorCategory.midCategories.find((category) => category.id === activeTextMidCategoryId) || majorCategory.midCategories[0];
+}
+
+function getSalesTextCategories() {
+  const themes = ["price-guide", "reference-image", "reference-link"];
+  const icons = ["₩", "T", "※"];
+
+  return salesTextGroups.map((group, groupIndex) => {
+    const midMap = new Map();
+
+    group.rows.forEach((row) => {
+      const midName = row.middle || "기본";
+      const subName = row.small || row.product || "기본";
+      const midId = `${group.id}-${normalizeSearchText(midName) || midMap.size}`;
+
+      if (!midMap.has(midName)) {
+        midMap.set(midName, {
+          id: midId,
+          name: midName,
+          color: Object.values(materialMidDotColors)[groupIndex % Object.values(materialMidDotColors).length],
+          subCategories: [],
+        });
+      }
+
+      const midCategory = midMap.get(midName);
+      if (!midCategory.subCategories.some((subCategory) => subCategory.name === subName)) {
+        midCategory.subCategories.push({
+          name: subName,
+          desc: row.product || row.executor || group.description,
+        });
+      }
+    });
+
+    return {
+      id: group.id,
+      theme: themes[groupIndex % themes.length],
+      icon: icons[groupIndex % icons.length],
+      name: group.title,
+      description: group.description,
+      hasMid: true,
+      midCategories: Array.from(midMap.values()),
+    };
+  });
+}
+
+function findTextSubCategoryMatch(searchTerm) {
+  const normalizedSearch = normalizeSearchText(searchTerm);
+  if (!normalizedSearch) return null;
+
+  for (const majorCategory of getSalesTextCategories()) {
+    for (const midCategory of majorCategory.midCategories) {
+      const subCategory = midCategory.subCategories.find((item) => normalizeSearchText(item.name).includes(normalizedSearch));
+      if (subCategory) return { majorCategory, midCategory, subCategory };
+    }
+  }
+
+  return null;
+}
+
+function getSalesTextRowsForSubCategory(subCategoryName) {
+  const group = salesTextGroups.find((item) => item.id === activeTextMajorCategoryId);
+  const activeMid = getActiveTextMidCategory();
+  return (group?.rows || []).filter((row) => row.middle === activeMid?.name && (row.small || row.product || "기본") === subCategoryName);
+}
+
+function getSalesTextSubCategoryCount(subCategoryName) {
+  return getSalesTextRowsForSubCategory(subCategoryName).length;
+}
+
+function renderSalesTextMajorCard(category) {
+  const isActive = category.id === activeTextMajorCategoryId;
+  const midCount = category.hasMid ? category.midCategories.length : 0;
+  const subCount = category.hasMid ? category.midCategories.reduce((sum, midCategory) => sum + midCategory.subCategories.length, 0) : 0;
+  const itemCount = salesTextGroups.find((group) => group.id === category.id)?.rows.length || 0;
+
+  return `
+    <button class="major-select-card ${isActive ? "active" : ""}" type="button" data-action="select-text-major" data-major-id="${category.id}" data-major-theme="${category.theme}">
+      <div class="major-select-main">
+        <span class="major-icon" aria-hidden="true">${category.icon || "T"}</span>
+        <div>
+          <strong>${escapeHtml(category.name)}</strong>
+          <p>${escapeHtml(category.description)}</p>
+        </div>
+      </div>
+      <div class="major-badges">
+        <span>${midCount}개 중분류</span>
+        <span>${subCount}개 소분류</span>
+        <span>${itemCount}개 항목</span>
+      </div>
+    </button>
+  `;
+}
+
+function renderSalesTextMidRow(majorCategory) {
+  const cards = majorCategory.midCategories
+    .map((midCategory) => {
+      const isActive = midCategory.id === activeTextMidCategoryId;
+      const count = midCategory.subCategories.reduce((sum, subCategory) => sum + getSalesTextSubCategoryCount(subCategory.name), 0);
+      return `
+        <button class="mid-select-card ${isActive ? "active" : ""}" type="button" data-action="select-text-mid" data-mid-id="${midCategory.id}" style="--mid-dot: ${midCategory.color}">
+          <span class="mid-dot" aria-hidden="true"></span>
+          <strong>${escapeHtml(midCategory.name)}</strong>
+          <small>${midCategory.subCategories.length}개 소분류 · ${count}개 항목</small>
+        </button>
+      `;
+    })
+    .join("");
+
+  return `<div class="mid-selection-grid">${cards}</div>`;
+}
+
+function renderSalesTextSubCategoryCard(subCategory, midCategory, index) {
+  const count = getSalesTextSubCategoryCount(subCategory.name);
+  const isActive = activeTextSubCategoryName === subCategory.name;
+
+  return `
+    <div class="subcategory-card ${isActive ? "active" : ""}" role="button" tabindex="0" data-action="select-text-subcategory" data-subcategory-name="${escapeHtml(subCategory.name)}">
+      <div class="subcategory-info">
+        <span class="row-number">${index + 1}</span>
+        <div>
+          <strong>${escapeHtml(subCategory.name)}</strong>
+          <p>${escapeHtml(subCategory.desc)}</p>
+        </div>
+      </div>
+      <div class="subcategory-actions">
+        <span>${count}개 항목</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderSelectedSalesTextSubCategory(subCategory) {
+  const rows = getSalesTextRowsForSubCategory(subCategory.name);
+  const content = rows.length
+    ? `
+      <div class="sales-text-table-wrap compact-sales-text-table">
+        <table class="sales-text-table">
+          <thead>
+            <tr>
+              <th>대분류</th>
+              <th>중분류</th>
+              <th>소분류</th>
+              <th>실행사</th>
+              <th>상품</th>
+              <th>단가</th>
+              <th>구동/수량</th>
+              <th>환불/AS</th>
+              <th>영업 메모</th>
+            </tr>
+          </thead>
+          <tbody>${rows.map(renderSalesTextRow).join("")}</tbody>
+        </table>
+      </div>
+    `
+    : `<div class="empty-category compact-empty">등록된 텍스트 항목이 없습니다.</div>`;
+
+  return `
+    <div class="subcategory-materials active sales-text-selected-panel">
+      <div class="subcategory-materials-head">
+        <div>
+          <span class="category-label">선택 소분류</span>
+          <h5>${escapeHtml(subCategory.name)}</h5>
+        </div>
+        <span class="selection-count">${rows.length}개 항목</span>
+      </div>
+      ${content}
+    </div>
+  `;
+}
+
+function renderSalesTextSubCategoryList(majorCategory, midCategory, normalizedSearch) {
+  if (!midCategory) return "";
+
+  const filteredSubCategories = midCategory.subCategories.filter((subCategory) => !normalizedSearch || normalizeSearchText(subCategory.name).includes(normalizedSearch));
+  const visibleActiveSubCategory = filteredSubCategories.find((subCategory) => subCategory.name === activeTextSubCategoryName);
+  const selectedSubCategory = visibleActiveSubCategory || filteredSubCategories[0] || null;
+  const rows = filteredSubCategories.length
+    ? filteredSubCategories.map((subCategory, index) => renderSalesTextSubCategoryCard(subCategory, midCategory, index)).join("")
+    : `<div class="empty-category compact-empty">검색 결과가 없습니다</div>`;
+  const selectedPanel = selectedSubCategory ? renderSelectedSalesTextSubCategory(selectedSubCategory) : "";
+
+  return `
+    <section class="subcategory-list-panel sales-text-category-panel" style="--mid-dot: ${midCategory.color}">
+      <div class="subcategory-row-list">${rows}</div>
+      ${selectedPanel}
+    </section>
+  `;
+}
+
+function renderSalesTextDashboard() {
+  const textCategories = getSalesTextCategories();
+  if (!activeTextMajorCategoryId || !textCategories.some((category) => category.id === activeTextMajorCategoryId)) {
+    activeTextMajorCategoryId = textCategories[0]?.id || "";
+  }
+  const activeMajor = getActiveTextMajorCategory();
+  if (!activeTextMidCategoryId || !activeMajor.midCategories.some((category) => category.id === activeTextMidCategoryId)) {
+    activeTextMidCategoryId = activeMajor.midCategories[0]?.id || "";
+  }
+  const activeMid = getActiveTextMidCategory(activeMajor);
+  if (!activeTextSubCategoryName || !activeMid?.subCategories.some((category) => category.name === activeTextSubCategoryName)) {
+    activeTextSubCategoryName = activeMid?.subCategories[0]?.name || "";
+  }
+  const normalizedSearch = normalizeSearchText(salesTextSearchTerm);
+  const majorCards = textCategories.map(renderSalesTextMajorCard).join("");
+  const midCards = renderSalesTextMidRow(activeMajor);
+  const subList = renderSalesTextSubCategoryList(activeMajor, activeMid, normalizedSearch);
+
+  salesTextTabs.innerHTML = "";
+  salesTextContent.innerHTML = `
+    <section class="material-vault-section hierarchy-vault-section sales-text-vault">
+      <div class="material-page-head">
+        <h3>영업자료 (텍스트)</h3>
+        <label class="material-search fixed-search">
+          <span>소분류 검색</span>
+          <input id="salesTextCategorySearch" type="search" value="${escapeHtml(salesTextSearchTerm)}" placeholder="예: 블로그, 영수증" autocomplete="off" />
+        </label>
+      </div>
+      <div class="major-selection-grid">${majorCards}</div>
+      ${midCards}
+      ${subList}
+    </section>
+  `;
 }
 
 function renderClientNavigation() {
@@ -832,12 +1385,13 @@ function updateMaterialModalMode() {
   editMaterialNote.classList.toggle("hidden", !editingMaterialId);
 }
 
-function openMaterialModal(kind = "pricing") {
+function openMaterialModal(kind = "pricing", categoryId = "") {
   editingMaterialId = null;
   currentMaterialKind = kind;
   activeMaterialVault = kind;
   renderSalesLibrary();
   materialForm.reset();
+  if (categoryId) materialCategory.value = categoryId;
   updateMaterialModalMode();
   materialModal.classList.remove("hidden");
   materialTitle.focus();
@@ -1197,8 +1751,29 @@ function toggleCategoryMaterialSelection(categoryId) {
   renderSalesLibrary();
 }
 
+function setSubCategoryMaterialSelection(categoryId, mode = "toggle") {
+  const categoryMaterials = getActiveVaultMaterials().filter((material) => material.categoryId === categoryId);
+  const allSelected = categoryMaterials.length > 0 && categoryMaterials.every((material) => selectedMaterialIds.has(material.id));
+  const shouldSelect = mode === "clear" ? false : !allSelected;
+
+  categoryMaterials.forEach((material) => {
+    if (shouldSelect) {
+      selectedMaterialIds.add(material.id);
+    } else {
+      selectedMaterialIds.delete(material.id);
+    }
+  });
+
+  renderSalesLibrary();
+}
+
 function updateMaterialSearch(value, immediate = false) {
   materialSearchTerm = value;
+  const match = findSubCategoryMatchInMajor(getActiveMajorCategory(), value);
+  if (match) {
+    activeMidCategoryId = match.midCategory.id;
+    activeSubCategoryName = match.subCategory.name;
+  }
   window.clearTimeout(materialSearchTimer);
 
   const renderSearch = () => {
@@ -1218,6 +1793,35 @@ function updateMaterialSearch(value, immediate = false) {
   }
 
   materialSearchTimer = window.setTimeout(renderSearch, 280);
+}
+
+function updateSalesTextSearch(value, immediate = false) {
+  salesTextSearchTerm = value;
+  const match = findTextSubCategoryMatch(value);
+  if (match) {
+    activeTextMajorCategoryId = match.majorCategory.id;
+    activeTextMidCategoryId = match.midCategory.id;
+    activeTextSubCategoryName = match.subCategory.name;
+  }
+  window.clearTimeout(materialSearchTimer);
+
+  const renderSearch = () => {
+    renderSalesTextDashboard();
+    requestAnimationFrame(() => {
+      const searchInput = document.querySelector("#salesTextCategorySearch");
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+      }
+    });
+  };
+
+  if (immediate) {
+    renderSearch();
+    return;
+  }
+
+  materialSearchTimer = window.setTimeout(renderSearch, 180);
 }
 
 function getSelectedVisibleMaterials() {
@@ -1263,6 +1867,82 @@ async function copySelectedMaterials() {
 }
 
 function handleMaterialClick(event) {
+  const majorSelection = event.target.closest("[data-action='select-major']");
+  if (majorSelection) {
+    const majorCategory = CATEGORIES.find((category) => category.id === majorSelection.dataset.majorId);
+    if (!majorCategory) return;
+    activeMajorCategoryId = majorCategory.id;
+    activeMaterialVault = getMajorMaterialKind(majorCategory);
+    if (majorCategory.hasMid) {
+      activeMidCategoryId = majorCategory.midCategories[0].id;
+      activeSubCategoryName = majorCategory.midCategories[0].subCategories[0].name;
+    }
+    renderSalesLibrary();
+    return;
+  }
+
+  const midSelection = event.target.closest("[data-action='select-mid']");
+  if (midSelection) {
+    activeMidCategoryId = midSelection.dataset.midId;
+    const majorCategory = getActiveMajorCategory();
+    const midCategory = getActiveMidCategory(majorCategory);
+    activeSubCategoryName = midCategory?.subCategories[0]?.name || activeSubCategoryName;
+    renderSalesLibrary();
+    return;
+  }
+
+  const subCategorySelection = event.target.closest("[data-action='select-subcategory']");
+  if (subCategorySelection) {
+    if (!event.target.closest("[data-action='register-subcategory']")) {
+      activeSubCategoryName = subCategorySelection.dataset.subcategoryName;
+      renderSalesLibrary();
+      return;
+    }
+  }
+
+  const registerButton = event.target.closest("[data-action='register-subcategory'], [data-action='add-subcategory-material']");
+  if (registerButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    openMaterialModal(activeMaterialVault, registerButton.dataset.categoryId);
+    return;
+  }
+
+  const majorToggle = event.target.closest("[data-action='toggle-major']");
+  if (majorToggle) {
+    const previousScrollY = window.scrollY;
+    const card = majorToggle.closest(".major-category-card");
+    const majorKey = `major:${card.dataset.majorId}`;
+    const body = card.querySelector(".major-category-body");
+    const isCollapsed = body.classList.toggle("collapsed");
+    majorToggle.setAttribute("aria-expanded", String(!isCollapsed));
+    majorToggle.querySelector(".chevron")?.classList.toggle("open", !isCollapsed);
+    if (isCollapsed) collapsedMaterialGroupIds.add(majorKey);
+    else collapsedMaterialGroupIds.delete(majorKey);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: previousScrollY, left: 0, behavior: "auto" });
+    });
+    return;
+  }
+
+  const midToggle = event.target.closest("[data-action='toggle-mid']");
+  if (midToggle) {
+    const previousScrollY = window.scrollY;
+    const midCard = midToggle.closest(".mid-category-card");
+    const majorCard = midToggle.closest(".major-category-card");
+    const midKey = `mid:${majorCard.dataset.majorId}:${midCard.dataset.midId}`;
+    const body = midCard.querySelector(".mid-category-body");
+    const isCollapsed = body.classList.toggle("collapsed");
+    midToggle.setAttribute("aria-expanded", String(!isCollapsed));
+    midToggle.querySelector(".chevron")?.classList.toggle("open", !isCollapsed);
+    if (isCollapsed) collapsedMaterialGroupIds.add(midKey);
+    else collapsedMaterialGroupIds.delete(midKey);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: previousScrollY, left: 0, behavior: "auto" });
+    });
+    return;
+  }
+
   const categorySelection = event.target.closest("[data-action='select-category-materials']");
   if (categorySelection) {
     event.preventDefault();
@@ -1273,6 +1953,7 @@ function handleMaterialClick(event) {
 
   const categoryToggle = event.target.closest("[data-action='toggle-category']");
   if (categoryToggle) {
+    const previousScrollY = window.scrollY;
     const body = categoryToggle.closest(".resource-category").querySelector(".category-body");
     if (!body) return;
     const isCollapsed = body.classList.toggle("collapsed");
@@ -1284,6 +1965,9 @@ function handleMaterialClick(event) {
     } else {
       openCategoryIds.add(categoryKey);
     }
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: previousScrollY, left: 0, behavior: "auto" });
+    });
     return;
   }
 
@@ -1293,11 +1977,13 @@ function handleMaterialClick(event) {
     return;
   }
 
-  const bulkAction = event.target.closest("[data-action='select-visible-materials'], [data-action='download-selected-materials'], [data-action='copy-selected-materials']");
+  const bulkAction = event.target.closest("[data-action='select-visible-materials'], [data-action='download-selected-materials'], [data-action='copy-selected-materials'], [data-action='select-subcategory-materials'], [data-action='clear-subcategory-materials']");
   if (bulkAction) {
     if (bulkAction.dataset.action === "select-visible-materials") toggleVisibleMaterialSelection();
     if (bulkAction.dataset.action === "download-selected-materials") downloadSelectedMaterials();
     if (bulkAction.dataset.action === "copy-selected-materials") copySelectedMaterials();
+    if (bulkAction.dataset.action === "select-subcategory-materials") setSubCategoryMaterialSelection(bulkAction.dataset.categoryId);
+    if (bulkAction.dataset.action === "clear-subcategory-materials") setSubCategoryMaterialSelection(bulkAction.dataset.categoryId, "clear");
     return;
   }
 
@@ -1329,6 +2015,34 @@ function handleMaterialClick(event) {
   if (button.dataset.action === "edit-image") openEditMaterialModal(material.id);
   if (button.dataset.action === "delete-image") deleteMaterial(material.id);
   if (button.dataset.action === "toggle-image" && material.image) toggleMaterialExpanded(material.id);
+}
+
+function handleSalesTextClick(event) {
+  const majorSelection = event.target.closest("[data-action='select-text-major']");
+  if (majorSelection) {
+    const majorCategory = getSalesTextCategories().find((category) => category.id === majorSelection.dataset.majorId);
+    if (!majorCategory) return;
+    activeTextMajorCategoryId = majorCategory.id;
+    activeTextMidCategoryId = majorCategory.midCategories[0].id;
+    activeTextSubCategoryName = majorCategory.midCategories[0].subCategories[0].name;
+    renderSalesTextDashboard();
+    return;
+  }
+
+  const midSelection = event.target.closest("[data-action='select-text-mid']");
+  if (midSelection) {
+    activeTextMidCategoryId = midSelection.dataset.midId;
+    const midCategory = getActiveTextMidCategory();
+    activeTextSubCategoryName = midCategory?.subCategories[0]?.name || activeTextSubCategoryName;
+    renderSalesTextDashboard();
+    return;
+  }
+
+  const subCategorySelection = event.target.closest("[data-action='select-text-subcategory']");
+  if (subCategorySelection) {
+    activeTextSubCategoryName = subCategorySelection.dataset.subcategoryName;
+    renderSalesTextDashboard();
+  }
 }
 
 function showDashboard(user) {
@@ -1367,8 +2081,8 @@ function showPage(page) {
     item.classList.toggle("active", item.dataset.page === page);
   });
 
-  if (page === "text-sales" && !papaAiDocumentCache.has(selectedPapaAiDocumentId)) {
-    loadPapaAiDocument(selectedPapaAiDocumentId);
+  if (page === "text-sales") {
+    renderSalesTextDashboard();
   }
 
   if (page === "inbound") {
@@ -1453,9 +2167,9 @@ clientOwnerTabs.addEventListener("click", (event) => {
   if (button) selectClientOwner(button.dataset.owner);
 });
 
-openMaterialModalButton.addEventListener("click", () => openMaterialModal("pricing"));
-openReferenceMaterialModalButton.addEventListener("click", () => openMaterialModal("reference-image"));
-openReferenceLinkModalButton.addEventListener("click", () => openMaterialModal("reference-link"));
+openMaterialModalButton?.addEventListener("click", () => openMaterialModal("pricing"));
+openReferenceMaterialModalButton?.addEventListener("click", () => openMaterialModal("reference-image"));
+openReferenceLinkModalButton?.addEventListener("click", () => openMaterialModal("reference-link"));
 closeMaterialModalButton.addEventListener("click", closeMaterialModal);
 cancelMaterialModalButton.addEventListener("click", closeMaterialModal);
 materialModal.addEventListener("click", (event) => {
@@ -1487,11 +2201,27 @@ trashModal.addEventListener("click", (event) => {
   if (event.target === trashModal) trashModal.classList.add("hidden");
 });
 
-aiDocList.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-doc-id]");
-  if (button) loadPapaAiDocument(button.dataset.docId);
+salesTextTabs.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sales-text-group]");
+  if (!button) return;
+  activeSalesTextGroup = button.dataset.salesTextGroup;
+  renderSalesTextDashboard();
 });
-aiDocSearch.addEventListener("input", renderPapaAiDocumentContent);
+salesTextContent.addEventListener("click", handleSalesTextClick);
+salesTextContent.addEventListener("compositionstart", (event) => {
+  if (event.target.id === "salesTextCategorySearch") salesTextSearchComposing = true;
+});
+salesTextContent.addEventListener("compositionend", (event) => {
+  if (event.target.id === "salesTextCategorySearch") {
+    salesTextSearchComposing = false;
+    updateSalesTextSearch(event.target.value, true);
+  }
+});
+salesTextContent.addEventListener("input", (event) => {
+  if (event.target.id === "salesTextCategorySearch" && !salesTextSearchComposing) {
+    updateSalesTextSearch(event.target.value);
+  }
+});
 
 inboundTableBody.addEventListener("click", (event) => {
   const button = event.target.closest("[data-lead-id]");
@@ -1552,7 +2282,7 @@ async function initializeApp() {
   renderInboundLeads();
   await loadSharedMaterialState();
   renderSalesLibrary();
-  renderPapaAiDocumentList();
+  renderSalesTextDashboard();
   renderClientNavigation();
   renderClients();
 }

@@ -509,6 +509,22 @@ function showToast(message) {
   showToast.timeout = window.setTimeout(() => toastMessage.classList.add("hidden"), 1800);
 }
 
+function pulseInteraction(element) {
+  if (!element) return;
+  element.classList.remove("is-pressing");
+  void element.offsetWidth;
+  element.classList.add("is-pressing");
+  window.setTimeout(() => element.classList.remove("is-pressing"), 760);
+}
+
+function animatePageEntry(pageElement) {
+  if (!pageElement || pageElement.classList.contains("hidden")) return;
+  pageElement.classList.remove("is-entering");
+  void pageElement.offsetWidth;
+  pageElement.classList.add("is-entering");
+  window.setTimeout(() => pageElement.classList.remove("is-entering"), 680);
+}
+
 function renderCategoryOptions() {
   materialCategory.innerHTML = materialCategories
     .map((category) => `<option value="${category.id}">${category.name}</option>`)
@@ -617,8 +633,6 @@ function renderMajorSelectionCard(category, allMaterials) {
   const isActive = category.id === activeMajorCategoryId;
   const kind = getMajorMaterialKind(category);
   const materialCount = allMaterials.filter((material) => getMaterialKind(material) === kind).length;
-  const midCount = category.hasMid ? category.midCategories.length : 0;
-  const subCount = category.hasMid ? category.midCategories.reduce((sum, midCategory) => sum + midCategory.subCategories.length, 0) : 0;
   const iconMap = {
     "price-guide": "₩",
     "reference-image": "⌕",
@@ -631,14 +645,9 @@ function renderMajorSelectionCard(category, allMaterials) {
       <div class="major-select-main">
         <span class="major-icon" aria-hidden="true">${icon}</span>
         <div>
-          <strong>${escapeHtml(category.name)}</strong>
+          <strong>${escapeHtml(category.name)} <span class="major-inline-count">${materialCount}개 자료</span></strong>
           <p>${escapeHtml(category.description)}</p>
         </div>
-      </div>
-      <div class="major-badges">
-        <span>${midCount}개 중분류</span>
-        <span>${subCount}개 소분류</span>
-        <span>${materialCount}개 자료</span>
       </div>
     </button>
   `;
@@ -652,8 +661,7 @@ function renderMidSelectionRow(majorCategory, materials) {
       return `
         <button class="mid-select-card ${isActive ? "active" : ""}" type="button" data-action="select-mid" data-mid-id="${midCategory.id}" style="--mid-dot: ${midCategory.color}">
           <span class="mid-dot" aria-hidden="true"></span>
-          <strong>${escapeHtml(midCategory.name)}</strong>
-          <small>${midCategory.subCategories.length}개 소분류 · ${count}개 자료</small>
+          <strong>${escapeHtml(midCategory.name)} <span class="mid-inline-count">${count}개 자료</span></strong>
         </button>
       `;
     })
@@ -979,6 +987,10 @@ function renderSalesTextDashboard() {
       </div>
     </section>
   `;
+  salesTextContent.classList.remove("is-switching");
+  void salesTextContent.offsetWidth;
+  salesTextContent.classList.add("is-switching");
+  window.setTimeout(() => salesTextContent.classList.remove("is-switching"), 680);
 }
 
 function renderSalesTextRow(row) {
@@ -1075,8 +1087,6 @@ function getSalesTextSubCategoryCount(subCategoryName) {
 
 function renderSalesTextMajorCard(category) {
   const isActive = category.id === activeTextMajorCategoryId;
-  const midCount = category.hasMid ? category.midCategories.length : 0;
-  const subCount = category.hasMid ? category.midCategories.reduce((sum, midCategory) => sum + midCategory.subCategories.length, 0) : 0;
   const itemCount = salesTextGroups.find((group) => group.id === category.id)?.rows.length || 0;
 
   return `
@@ -1084,14 +1094,9 @@ function renderSalesTextMajorCard(category) {
       <div class="major-select-main">
         <span class="major-icon" aria-hidden="true">${category.icon || "T"}</span>
         <div>
-          <strong>${escapeHtml(category.name)}</strong>
+          <strong>${escapeHtml(category.name)} <span class="major-inline-count">${itemCount}개 항목</span></strong>
           <p>${escapeHtml(category.description)}</p>
         </div>
-      </div>
-      <div class="major-badges">
-        <span>${midCount}개 중분류</span>
-        <span>${subCount}개 소분류</span>
-        <span>${itemCount}개 항목</span>
       </div>
     </button>
   `;
@@ -1105,8 +1110,7 @@ function renderSalesTextMidRow(majorCategory) {
       return `
         <button class="mid-select-card ${isActive ? "active" : ""}" type="button" data-action="select-text-mid" data-mid-id="${midCategory.id}" style="--mid-dot: ${midCategory.color}">
           <span class="mid-dot" aria-hidden="true"></span>
-          <strong>${escapeHtml(midCategory.name)}</strong>
-          <small>${midCategory.subCategories.length}개 소분류 · ${count}개 항목</small>
+          <strong>${escapeHtml(midCategory.name)} <span class="mid-inline-count">${count}개 항목</span></strong>
         </button>
       `;
     })
@@ -2076,6 +2080,14 @@ function showPage(page) {
   clientsPage.classList.toggle("hidden", page !== "clients");
   settlementPage.classList.toggle("hidden", page !== "settlement");
   clientSubnav.classList.toggle("collapsed", !clientSubnavExpanded);
+  const visiblePage = {
+    inbound: inboundPage,
+    sales: salesPage,
+    "text-sales": textSalesPage,
+    clients: clientsPage,
+    settlement: settlementPage,
+  }[page];
+  animatePageEntry(visiblePage);
 
   navItems.forEach((item) => {
     item.classList.toggle("active", item.dataset.page === page);
@@ -2236,6 +2248,8 @@ const previewFitButton = document.querySelector("#previewFitButton");
 const previewWidthInput = document.querySelector("#previewWidthInput");
 const appShell = document.querySelector(".app-shell");
 const landingPreview = document.querySelector("#landingPreview");
+const isLocalPreviewHost = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
+document.body.classList.toggle("production-domain", !isLocalPreviewHost);
 
 function updatePreviewMode(width) {
   document.body.classList.toggle("preview-mobile", width <= 520);
@@ -2276,6 +2290,12 @@ previewWidthInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter") setPreviewWidth(previewWidthInput.value);
 });
 previewFitButton.addEventListener("click", () => setPreviewWidth("100%", previewFitButton));
+
+document.addEventListener("click", (event) => {
+  const target = event.target.closest("button, a, [role='button']");
+  if (!target || target.hasAttribute("disabled") || target.getAttribute("aria-disabled") === "true") return;
+  pulseInteraction(target);
+});
 
 async function initializeApp() {
   renderCategoryOptions();

@@ -1,5 +1,5 @@
 const users = [
-  { id: "papa.admin", password: "1234", name: "관리자", role: "admin" },
+  { id: "papa.admin", idAliases: ["admin", "관리자"], password: "1234", name: "관리자", role: "admin" },
   { id: "이신", password: "ss1234", passwordAliases: ["ㄴㄴ1234"], name: "이신", role: "staff" },
   { id: "정복", password: "5263", name: "정복", role: "staff" },
   { id: "지영", password: "5662", name: "지영", role: "staff" },
@@ -2110,6 +2110,12 @@ function isMatchingPassword(user, password) {
   return user.password === password || user.passwordAliases?.includes(password);
 }
 
+function isMatchingUserId(user, userId) {
+  const normalizedInput = userId.toLowerCase();
+  const ids = [user.id, ...(user.idAliases || [])].map((id) => id.toLowerCase());
+  return ids.includes(normalizedInput);
+}
+
 function selectClientOwner(owner) {
   selectedClientOwner = owner;
   currentPage = "clients";
@@ -2134,7 +2140,7 @@ loginForm.addEventListener("submit", (event) => {
   const formData = new FormData(loginForm);
   const userId = formData.get("userId")?.trim();
   const password = formData.get("password")?.trim();
-  const user = users.find((item) => item.id === userId && isMatchingPassword(item, password));
+  const user = users.find((item) => isMatchingUserId(item, userId) && isMatchingPassword(item, password));
 
   if (!user) {
     alert("아이디 또는 비밀번호가 올바르지 않습니다.");

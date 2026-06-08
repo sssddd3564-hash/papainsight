@@ -341,3 +341,29 @@ fatal: repository 'https://github.com/sssddd3564-hash/papainsight.git/' not foun
 - 오류 요약: `node_repl kernel exited unexpectedly`, `windows sandbox failed: spawn setup refresh`.
 - 영향: 로컬 서버 응답은 `200 OK`이고 `script.js` 문법 검증도 통과했으나, 이번 턴에서는 오른쪽 브라우저 자동 이동 검증을 완료하지 못했습니다.
 - 대응: 사용자에게 직접 열 수 있는 최신 로컬 링크를 안내하고, 이후 브라우저 연결이 정상화되면 화면 확인을 재시도합니다.
+
+## 2026-06-07 Git 소유권 경고 반복
+
+- 증상: 최신 작업물 반영 후 `git log` 확인 중 `dubious ownership` 경고가 다시 발생했다.
+- 원인: 임시 클론 폴더 소유자와 명령 실행 사용자가 달라 `Git`(깃: 변경 이력 관리 도구)이 안전 경로 확인을 요구했다.
+- 처리: `safe.directory` 옵션을 일회성으로 지정해 최신 커밋 확인을 진행했다.
+- 재발 방지: 이 작업 폴더를 정식 `.git` 저장소로 전환하거나, 임시 클론 경로를 안전 경로로 등록한다.
+
+## 2026-06-07 Node 서버 실행 경로 오류
+
+- 증상: Python 정적 서버를 종료한 뒤 WindowsApps 경로의 `node.exe`로 `dev-server.js` 실행을 시도했으나 `Access is denied` 오류가 발생했다.
+- 원인: WindowsApps 설치 경로의 실행 파일은 PowerShell `Start-Process`에서 직접 실행 권한이 제한될 수 있다.
+- 처리: Codex 캐시 런타임의 Node 실행 파일 경로로 서버를 다시 실행한다.
+- 재발 방지: 로컬 서버 실행 시 `Get-Command node` 결과가 WindowsApps 경로면 캐시 런타임 Node 또는 프로젝트 실행 스크립트를 사용한다.
+
+## 2026-06-07 검색 명령 정규식 오류
+
+- 증상: 로그인 원인 확인 중 `rg`(알지: 빠른 문자열 검색 도구) 명령의 따옴표/정규식 조합이 잘못되어 `regex parse error`가 발생했다.
+- 처리: 이후 단순 패턴 검색과 파일 직접 확인으로 로그인 폼과 계정 정보를 확인했다.
+- 재발 방지: PowerShell에서 따옴표가 섞인 검색 패턴은 작은따옴표로 감싸거나 패턴을 분리해서 실행한다.
+
+## 2026-06-07 Node 직접 실행 권한 오류 반복
+
+- 증상: 로그인 판정 로직 검증 중 `node -e` 실행이 WindowsApps 권한 문제로 `Access is denied` 오류가 발생했다.
+- 처리: Codex 캐시 런타임 Node 실행 파일을 직접 지정해 같은 검증을 진행한다.
+- 재발 방지: 이 PC에서는 `node` 명령이 WindowsApps 경로로 잡히면 캐시 런타임 Node 경로를 사용한다.

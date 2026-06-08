@@ -574,6 +574,21 @@ function getMajorMaterialKind(majorCategory) {
   return majorCategory.id === "price-guide" ? "pricing" : majorCategory.id;
 }
 
+function getMajorCategoryIds(majorCategory) {
+  if (!majorCategory?.hasMid) return new Set();
+  return new Set(
+    majorCategory.midCategories.flatMap((midCategory) =>
+      midCategory.subCategories.map((subCategory) => getSubCategoryId(subCategory.name)).filter(Boolean),
+    ),
+  );
+}
+
+function getMaterialsForMajor(majorCategory, allMaterials) {
+  const majorKind = getMajorMaterialKind(majorCategory);
+  const categoryIds = getMajorCategoryIds(majorCategory);
+  return allMaterials.filter((material) => getMaterialKind(material) === majorKind && categoryIds.has(material.categoryId));
+}
+
 function getActiveMajorCategory() {
   return CATEGORIES.find((category) => category.id === activeMajorCategoryId) || CATEGORIES[0];
 }
@@ -606,8 +621,7 @@ function getSubCategoryCount(materials, subCategoryName) {
 
 function renderMaterialVault(allMaterials) {
   const activeMajor = getActiveMajorCategory();
-  const activeKind = getMajorMaterialKind(activeMajor);
-  const activeMaterials = allMaterials.filter((material) => getMaterialKind(material) === activeKind);
+  const activeMaterials = getMaterialsForMajor(activeMajor, allMaterials);
   const normalizedSearch = normalizeSearchText(materialSearchTerm);
   const majorCards = CATEGORIES.map((category) => renderMajorSelectionCard(category, allMaterials)).join("");
   const midRow = activeMajor.hasMid ? renderMidSelectionRow(activeMajor, activeMaterials) : "";
@@ -631,8 +645,7 @@ function renderMaterialVault(allMaterials) {
 
 function renderMajorSelectionCard(category, allMaterials) {
   const isActive = category.id === activeMajorCategoryId;
-  const kind = getMajorMaterialKind(category);
-  const materialCount = allMaterials.filter((material) => getMaterialKind(material) === kind).length;
+  const materialCount = getMaterialsForMajor(category, allMaterials).length;
   const iconMap = {
     "price-guide": "₩",
     "reference-image": "⌕",

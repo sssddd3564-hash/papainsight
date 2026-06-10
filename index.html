@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>파파인사이트</title>
-    <link rel="stylesheet" href="styles.css?v=0.1-login-alias-20260607" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260608-emergency-lite" />
+    <link rel="stylesheet" href="styles.css?v=20260608-emergency-lite" />
   </head>
   <body>
     <div class="preview-topbar" aria-label="프로젝트 미리보기 툴바">
@@ -211,7 +212,7 @@
     </main>
 
     <section class="landing-preview hidden" id="landingPreview" aria-label="랜딩페이지 미리보기">
-      <iframe id="landingFrame" title="파파컴퍼니 랜딩페이지" src="landing-preview/index-v2.html?v=20260528"></iframe>
+      <iframe id="landingFrame" title="파파컴퍼니 랜딩페이지" data-src="landing-preview/index-v2.html?v=20260528"></iframe>
     </section>
 
     <div class="modal-backdrop hidden" id="materialModal" role="dialog" aria-modal="true" aria-labelledby="materialModalTitle">
@@ -236,7 +237,11 @@
 
         <label id="materialFilesLabel">
           이미지 파일
-          <input id="materialFiles" name="files" type="file" accept="image/*" multiple />
+          <span class="file-picker-row">
+            <button class="mini-button file-picker-button" id="materialFilePickerButton" type="button">파일 선택</button>
+            <span class="file-picker-status" id="materialFileStatus">선택된 파일 없음</span>
+          </span>
+          <input class="visually-hidden-file" id="materialFiles" name="files" type="file" accept="image/*" multiple />
         </label>
 
         <p class="modal-note hidden" id="editMaterialNote">수정 시 새 이미지를 선택하지 않으면 기존 이미지가 유지됩니다.</p>
@@ -270,6 +275,6 @@
 
     <div class="toast hidden" id="toastMessage"></div>
 
-    <script src="script.js?v=0.1-login-alias-20260607"></script>
+    <script src="script.js?v=20260608-emergency-lite"></script>
   </body>
 </html>

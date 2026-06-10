@@ -108,11 +108,23 @@ body.production-domain .landing-preview {
   display: none;
 }
 
+body.production-domain {
+  padding-top: 0;
+}
+
 body.production-domain .app-shell {
   border-left: 0;
   border-right: 0;
   transform: none;
   width: 100%;
+}
+
+body.production-domain *,
+body.production-domain *::before,
+body.production-domain *::after {
+  animation: none !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
 }
 
 .preview-project {
@@ -254,8 +266,9 @@ body.preview-mobile .ghost-button {
 .login-view {
   align-items: center;
   background:
-    linear-gradient(120deg, rgba(4, 86, 92, 0.92), rgba(16, 32, 43, 0.72)),
-    url("https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80") center/cover;
+    radial-gradient(circle at 18% 18%, rgba(34, 197, 94, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 20%, rgba(0, 214, 204, 0.18), transparent 26%),
+    linear-gradient(135deg, #06191c, #101820 52%, #071114);
   display: flex;
   justify-content: center;
   min-height: 100vh;
@@ -414,15 +427,11 @@ textarea {
 .ghost-button.is-pressing::after,
 .icon-action.is-pressing::after,
 .icon-button.is-pressing::after,
-.nav-item.is-pressing::after,
-.subnav-item.is-pressing::after,
-.owner-tab.is-pressing::after,
 .sales-text-tab.is-pressing::after,
 .major-select-card.is-pressing::after,
 .mid-select-card.is-pressing::after,
-.subcategory-card.is-pressing::after,
-.contact-check.is-pressing::after {
-  animation: neonSweep 720ms cubic-bezier(0.22, 1, 0.36, 1);
+.subcategory-card.is-pressing::after {
+  animation: neonSweep 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .login-form button:active,
@@ -463,7 +472,7 @@ textarea {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   min-height: 100vh;
-  transition: grid-template-columns 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: grid-template-columns 140ms ease;
 }
 
 .dashboard-view:has(.sidebar.collapsed) {
@@ -626,10 +635,9 @@ textarea {
   justify-self: stretch;
   text-align: left;
   transition:
-    background 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 560ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
   white-space: nowrap;
   width: 100%;
 }
@@ -658,9 +666,9 @@ textarea {
 .subnav-item:hover {
   background: linear-gradient(90deg, rgba(34, 197, 94, 0.16), rgba(0, 214, 204, 0.08));
   border-color: rgba(52, 211, 153, 0.28);
-  box-shadow: inset 3px 0 0 var(--neon-mint), 0 0 26px rgba(34, 197, 94, 0.13);
+  box-shadow: inset 3px 0 0 var(--neon-mint);
   color: #ffffff;
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .client-subnav {
@@ -672,10 +680,9 @@ textarea {
   padding: 2px 0 2px 34px;
   transform: translateY(0);
   transition:
-    max-height 560ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 420ms ease,
-    padding 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    max-height 140ms ease,
+    opacity 120ms ease,
+    padding 120ms ease;
 }
 
 .client-subnav.collapsed {
@@ -685,7 +692,7 @@ textarea {
   padding-bottom: 0;
   padding-top: 0;
   pointer-events: none;
-  transform: translateY(-6px);
+  transform: none;
 }
 
 .sidebar.collapsed .client-subnav {
@@ -695,7 +702,7 @@ textarea {
   overflow: hidden;
   padding: 0;
   pointer-events: none;
-  transform: translateY(-6px);
+  transform: none;
 }
 
 .subnav-item {
@@ -796,12 +803,9 @@ h2 {
   grid-auto-flow: dense;
 }
 
-.page-section {
-  animation: pageSlideIn 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
+.page-section,
 .page-section.is-entering {
-  animation: pageSlideInSoft 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: none;
 }
 
 #salesPage {
@@ -1712,9 +1716,12 @@ h2 {
 
 .category-body:not(.collapsed),
 .major-category-body:not(.collapsed),
-.mid-category-body:not(.collapsed),
-.client-subnav:not(.collapsed) {
+.mid-category-body:not(.collapsed) {
   animation: slideReveal 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.client-subnav:not(.collapsed) {
+  animation: none;
 }
 
 .document-grid {
@@ -2043,6 +2050,41 @@ h2 {
   line-height: 1.5;
   margin: 0;
   padding: 12px;
+}
+
+.file-picker-row {
+  align-items: center;
+  background: rgba(10, 13, 16, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius);
+  display: flex;
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px;
+}
+
+.file-picker-button {
+  flex: 0 0 auto;
+}
+
+.file-picker-status {
+  color: #dce7ef;
+  flex: 1 1 auto;
+  font-size: 13px;
+  font-weight: 800;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visually-hidden-file {
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
 }
 
 .modal-actions {
@@ -2669,13 +2711,17 @@ h2 {
   font-weight: 900;
   min-height: 40px;
   padding: 0 16px;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .owner-tab.active,
 .owner-tab:hover {
   background: linear-gradient(90deg, rgba(0, 214, 204, 0.16), rgba(255, 159, 28, 0.1));
   border-color: rgba(0, 168, 168, 0.45);
-  box-shadow: 0 0 20px rgba(0, 214, 204, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(143, 255, 234, 0.12);
   color: #dffff8;
 }
 

@@ -1,4 +1,5 @@
 *.zip
+*.tar.gz
 node_modules/
 .env
 .DS_Store
@@ -11,3 +12,5 @@ github-papainsight/
 chrome-*.html
 *.png
 data/materials-state.json
+data/backups/
+data/material-assets/

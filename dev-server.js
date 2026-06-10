@@ -1,20 +1,29 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const zlib = require("zlib");
 
 const port = 4175;
 const root = __dirname;
 const dataDir = path.join(root, "data");
 const materialsStatePath = path.join(dataDir, "materials-state.json");
+const materialAssetsDir = path.join(dataDir, "material-assets");
 const types = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
 };
 
 function ensureMaterialsState() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(materialAssetsDir)) fs.mkdirSync(materialAssetsDir, { recursive: true });
   if (!fs.existsSync(materialsStatePath)) {
     fs.writeFileSync(
       materialsStatePath,
@@ -23,12 +32,94 @@ function ensureMaterialsState() {
   }
 }
 
-function sendJson(response, statusCode, payload) {
-  response.writeHead(statusCode, {
+function getExtensionFromMime(mimeType = "") {
+  if (mimeType.includes("jpeg")) return "jpg";
+  if (mimeType.includes("png")) return "png";
+  if (mimeType.includes("webp")) return "webp";
+  if (mimeType.includes("gif")) return "gif";
+  return "png";
+}
+
+function safeFilePart(value = "material") {
+  return String(value)
+    .replace(/\.[^.]+$/, "")
+    .replace(/[^a-zA-Z0-9가-힣_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "material";
+}
+
+function extractMaterialAssets(state) {
+  ensureMaterialsState();
+  const nextState = {
+    materials: Array.isArray(state.materials) ? state.materials : [],
+    deletedAssetIds: Array.isArray(state.deletedAssetIds) ? state.deletedAssetIds : [],
+    deleteLogs: Array.isArray(state.deleteLogs) ? state.deleteLogs : [],
+  };
+  let changed = false;
+
+  nextState.materials = nextState.materials.map((material) => {
+    if (typeof material.image !== "string" || !material.image.startsWith("data:")) return material;
+
+    const match = material.image.match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) return material;
+
+    const extension = getExtensionFromMime(match[1]);
+    const fileBase = safeFilePart(material.fileName || material.title || material.id);
+    const fileName = `${material.id || Date.now()}-${fileBase}.${extension}`;
+    const filePath = path.join(materialAssetsDir, fileName);
+    fs.writeFileSync(filePath, Buffer.from(match[2], "base64"));
+    changed = true;
+
+    return {
+      ...material,
+      image: `/data/material-assets/${encodeURIComponent(fileName)}`,
+      fileName: material.fileName || fileName,
+    };
+  });
+
+  return { state: nextState, changed };
+}
+
+function readMaterialsState() {
+  ensureMaterialsState();
+  const rawState = JSON.parse(fs.readFileSync(materialsStatePath, "utf-8"));
+  const { state, changed } = extractMaterialAssets(rawState);
+  if (changed) fs.writeFileSync(materialsStatePath, JSON.stringify(state, null, 2));
+  return state;
+}
+
+function writeMaterialsState(state) {
+  const normalized = extractMaterialAssets(state).state;
+  fs.writeFileSync(materialsStatePath, JSON.stringify(normalized, null, 2));
+  return normalized;
+}
+
+function sendJson(request, response, statusCode, payload) {
+  const body = Buffer.from(JSON.stringify(payload));
+  const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store, max-age=0",
-  });
-  response.end(JSON.stringify(payload));
+  };
+
+  if ((request.headers["accept-encoding"] || "").includes("gzip")) {
+    zlib.gzip(body, (error, compressedBody) => {
+      if (error) {
+        response.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        response.end(JSON.stringify({ ok: false, message: error.message }));
+        return;
+      }
+
+      response.writeHead(statusCode, {
+        ...headers,
+        "Content-Encoding": "gzip",
+      });
+      response.end(compressedBody);
+    });
+    return;
+  }
+
+  response.writeHead(statusCode, headers);
+  response.end(body);
 }
 
 function readRequestBody(request) {
@@ -46,8 +137,8 @@ async function handleMaterialsApi(request, response) {
   ensureMaterialsState();
 
   if (request.method === "GET") {
-    const state = JSON.parse(fs.readFileSync(materialsStatePath, "utf-8"));
-    sendJson(response, 200, state);
+    const state = readMaterialsState();
+    sendJson(request, response, 200, state);
     return true;
   }
 
@@ -61,15 +152,15 @@ async function handleMaterialsApi(request, response) {
         deleteLogs: Array.isArray(nextState.deleteLogs) ? nextState.deleteLogs : [],
       };
 
-      fs.writeFileSync(materialsStatePath, JSON.stringify(safeState, null, 2));
-      sendJson(response, 200, { ok: true, ...safeState });
+      const normalizedState = writeMaterialsState(safeState);
+      sendJson(request, response, 200, { ok: true, ...normalizedState });
     } catch (error) {
-      sendJson(response, 400, { ok: false, message: error.message });
+      sendJson(request, response, 400, { ok: false, message: error.message });
     }
     return true;
   }
 
-  sendJson(response, 405, { ok: false, message: "Method not allowed" });
+  sendJson(request, response, 405, { ok: false, message: "Method not allowed" });
   return true;
 }
 
@@ -78,6 +169,23 @@ const server = http.createServer(async (request, response) => {
 
   if (requestedPath === "/api/materials") {
     await handleMaterialsApi(request, response);
+    return;
+  }
+
+  if (requestedPath === "/favicon.ico") {
+    const faviconPath = path.join(root, "favicon.ico");
+    fs.readFile(faviconPath, (error, content) => {
+      if (error) {
+        response.writeHead(204, { "Cache-Control": "public, max-age=86400" });
+        response.end();
+        return;
+      }
+      response.writeHead(200, {
+        "Content-Type": "image/x-icon",
+        "Cache-Control": "public, max-age=86400",
+      });
+      response.end(content);
+    });
     return;
   }
 

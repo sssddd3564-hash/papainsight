@@ -305,6 +305,8 @@ const materialCategory = document.querySelector("#materialCategory");
 const materialTitle = document.querySelector("#materialTitle");
 const materialFiles = document.querySelector("#materialFiles");
 const materialFilesLabel = document.querySelector("#materialFilesLabel");
+const materialFilePickerButton = document.querySelector("#materialFilePickerButton");
+const materialFileStatus = document.querySelector("#materialFileStatus");
 const materialLink = document.querySelector("#materialLink");
 const materialLinkLabel = document.querySelector("#materialLinkLabel");
 const editMaterialNote = document.querySelector("#editMaterialNote");
@@ -347,10 +349,23 @@ const openCategoryIds = new Set();
 const collapsedMaterialGroupIds = new Set();
 const materialState = {
   serverAvailable: false,
+  loaded: false,
+  loadingPromise: null,
   materials: null,
   deletedAssetIds: null,
   deleteLogs: null,
 };
+
+function clearLegacyMaterialLocalCache() {
+  if (!materialState.serverAvailable || !materialState.loaded || !Array.isArray(materialState.materials)) return;
+  try {
+    localStorage.removeItem(materialStorageKey);
+    localStorage.removeItem(deletedAssetStorageKey);
+    localStorage.removeItem(deletedMaterialStorageKey);
+  } catch (error) {
+    console.warn("구형 영업자료 로컬 백업 정리를 건너뜁니다.", error);
+  }
+}
 
 function readJson(key, fallback) {
   try {
@@ -377,7 +392,7 @@ function getStoredMaterials() {
 
 function saveStoredMaterials(materials) {
   materialState.materials = materials;
-  writeJson(materialStorageKey, materials);
+  if (!materialState.serverAvailable) writeJson(materialStorageKey, materials);
 }
 
 function getDeletedAssetIds() {
@@ -387,7 +402,7 @@ function getDeletedAssetIds() {
 
 function saveDeletedAssetIds(ids) {
   materialState.deletedAssetIds = ids;
-  writeJson(deletedAssetStorageKey, ids);
+  if (!materialState.serverAvailable) writeJson(deletedAssetStorageKey, ids);
 }
 
 function getDeleteLogs() {
@@ -397,7 +412,7 @@ function getDeleteLogs() {
 
 function saveDeleteLogs(logs) {
   materialState.deleteLogs = logs;
-  writeJson(deletedMaterialStorageKey, logs);
+  if (!materialState.serverAvailable) writeJson(deletedMaterialStorageKey, logs);
 }
 
 function getMaterialStatePayload() {
@@ -408,28 +423,74 @@ function getMaterialStatePayload() {
   };
 }
 
-function applyMaterialState(payload) {
+function isMaterialStatePayload(payload) {
+  return Boolean(payload) && Array.isArray(payload.materials) && Array.isArray(payload.deletedAssetIds) && Array.isArray(payload.deleteLogs);
+}
+
+function applyMaterialState(payload, options = {}) {
+  if (!isMaterialStatePayload(payload)) return false;
   const nextMaterials = Array.isArray(payload.materials) ? payload.materials : [];
   const nextDeletedAssetIds = Array.isArray(payload.deletedAssetIds) ? payload.deletedAssetIds : [];
   const nextDeleteLogs = Array.isArray(payload.deleteLogs) ? payload.deleteLogs : [];
 
-  saveStoredMaterials(nextMaterials);
-  saveDeletedAssetIds(nextDeletedAssetIds);
-  saveDeleteLogs(nextDeleteLogs);
+  if (!options.allowEmpty && nextMaterials.length === 0 && getStoredMaterials().length > 0) {
+    console.warn("자료 저장소가 비어 있어 기존 자료 덮어쓰기를 건너뜁니다.");
+    return false;
+  }
+
+  materialState.materials = nextMaterials;
+  materialState.deletedAssetIds = nextDeletedAssetIds;
+  materialState.deleteLogs = nextDeleteLogs;
+
+  if (!options.skipLocalWrite) {
+    writeJson(materialStorageKey, nextMaterials);
+    writeJson(deletedAssetStorageKey, nextDeletedAssetIds);
+    writeJson(deletedMaterialStorageKey, nextDeleteLogs);
+  }
+  return true;
+}
+
+async function fetchMaterialStateJson(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+  const preview = text.slice(0, 24).trim();
+  if (!contentType.includes("application/json") && !contentType.includes("text/json") && !preview.startsWith("{") && !preview.startsWith("[")) {
+    throw new Error(`자료 저장소 응답이 JSON이 아닙니다: ${preview}`);
+  }
+  return JSON.parse(text);
 }
 
 async function loadSharedMaterialState() {
   try {
-    const response = await fetch(materialApiEndpoint, { cache: "no-store" });
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-
-    const payload = await response.json();
+    const payload = await fetchMaterialStateJson(materialApiEndpoint);
     materialState.serverAvailable = true;
-    applyMaterialState(payload);
+    applyMaterialState(payload, { skipLocalWrite: true });
+    materialState.loaded = true;
+    clearLegacyMaterialLocalCache();
   } catch (error) {
     materialState.serverAvailable = false;
     console.warn("공유 자료 저장소를 불러오지 못해 로컬 저장소로 동작합니다.", error);
+    try {
+      const fallbackPayload = await fetchMaterialStateJson(`data/materials-state.json?v=${Date.now()}`);
+      applyMaterialState(fallbackPayload, { skipLocalWrite: true });
+      materialState.loaded = true;
+    } catch (fallbackError) {
+      console.warn("정적 자료 백업도 불러오지 못했습니다.", fallbackError);
+      materialState.loaded = true;
+    }
   }
+}
+
+function ensureMaterialStateLoaded() {
+  if (materialState.loaded) return Promise.resolve();
+  if (!materialState.loadingPromise) {
+    materialState.loadingPromise = loadSharedMaterialState().finally(() => {
+      materialState.loadingPromise = null;
+    });
+  }
+  return materialState.loadingPromise;
 }
 
 async function persistSharedMaterialState() {
@@ -444,7 +505,7 @@ async function persistSharedMaterialState() {
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
 
   const payload = await response.json();
-  applyMaterialState(payload);
+  applyMaterialState(payload, { skipLocalWrite: true });
 }
 
 function getInboundContacts() {
@@ -511,18 +572,18 @@ function showToast(message) {
 
 function pulseInteraction(element) {
   if (!element) return;
-  element.classList.remove("is-pressing");
-  void element.offsetWidth;
+  if (!isLocalPreviewHost) return;
+  if (element.closest(".sidebar, .client-owner-tabs, .client-subnav") || element.classList.contains("contact-check")) return;
   element.classList.add("is-pressing");
-  window.setTimeout(() => element.classList.remove("is-pressing"), 760);
+  window.setTimeout(() => element.classList.remove("is-pressing"), 180);
 }
 
 function animatePageEntry(pageElement) {
   if (!pageElement || pageElement.classList.contains("hidden")) return;
-  pageElement.classList.remove("is-entering");
-  void pageElement.offsetWidth;
+  if (!isLocalPreviewHost) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   pageElement.classList.add("is-entering");
-  window.setTimeout(() => pageElement.classList.remove("is-entering"), 680);
+  window.setTimeout(() => pageElement.classList.remove("is-entering"), 180);
 }
 
 function renderCategoryOptions() {
@@ -811,6 +872,10 @@ function renderMaterialCard(material) {
 
 function renderSalesLibrary() {
   const previousScrollY = window.scrollY;
+  if (!materialState.loaded) {
+    materialsLibrary.innerHTML = `<section class="material-vault-section hierarchy-vault-section"><div class="compact-empty">영업자료를 불러오는 중입니다.</div></section>`;
+    return;
+  }
   renderMaterials();
   requestAnimationFrame(() => {
     window.scrollTo({ top: previousScrollY, left: 0, behavior: "auto" });
@@ -1402,12 +1467,32 @@ function updateMaterialModalMode() {
   editMaterialNote.classList.toggle("hidden", !editingMaterialId);
 }
 
+function updateMaterialFileStatus() {
+  if (!materialFileStatus) return;
+  const files = Array.from(materialFiles.files || []);
+  if (!files.length) {
+    materialFileStatus.textContent = "선택된 파일 없음";
+    materialFileStatus.title = "";
+    return;
+  }
+
+  const fileNames = files.map((file) => file.name);
+  materialFileStatus.textContent = files.length === 1 ? fileNames[0] : `${files.length}개 파일 선택됨: ${fileNames[0]}`;
+  materialFileStatus.title = fileNames.join("\n");
+}
+
+function resetMaterialFileStatus() {
+  if (materialFiles) materialFiles.value = "";
+  updateMaterialFileStatus();
+}
+
 function openMaterialModal(kind = "pricing", categoryId = "") {
   editingMaterialId = null;
   currentMaterialKind = kind;
   activeMaterialVault = kind;
   renderSalesLibrary();
   materialForm.reset();
+  resetMaterialFileStatus();
   if (categoryId) materialCategory.value = categoryId;
   updateMaterialModalMode();
   materialModal.classList.remove("hidden");
@@ -1423,6 +1508,7 @@ function openEditMaterialModal(materialId) {
   activeMaterialVault = currentMaterialKind;
   renderSalesLibrary();
   materialForm.reset();
+  resetMaterialFileStatus();
   materialCategory.value = material.categoryId;
   materialTitle.value = material.title;
   materialLink.value = Array.isArray(material.links) ? material.links.join("\n") : material.linkUrl || "";
@@ -1467,6 +1553,7 @@ async function handleMaterialSubmit(event) {
   const isReferenceLink = currentMaterialKind === "reference-link";
 
   if (!files.length && !isReferenceLink && !editingMaterialId) {
+    if (materialFileStatus) materialFileStatus.textContent = "이미지 파일을 먼저 선택해 주세요";
     showToast("이미지 파일을 선택해 주세요.");
     return;
   }
@@ -2110,11 +2197,18 @@ function showPage(page) {
     renderSalesTextDashboard();
   }
 
+  if (page === "sales") {
+    renderSalesLibrary();
+    ensureMaterialStateLoaded().then(() => {
+      if (currentPage === "sales") renderSalesLibrary();
+    });
+  }
+
   if (page === "inbound") {
     renderInboundLeads();
   }
 
-  if (page === "clients") {
+  if (page === "clients" && !isSameClientClick) {
     renderClients();
   }
 }
@@ -2206,6 +2300,12 @@ cancelMaterialModalButton.addEventListener("click", closeMaterialModal);
 materialModal.addEventListener("click", (event) => {
   if (event.target === materialModal) closeMaterialModal();
 });
+materialFilePickerButton?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  materialFiles.click();
+});
+materialFiles?.addEventListener("change", updateMaterialFileStatus);
 materialForm.addEventListener("submit", handleMaterialSubmit);
 materialsLibrary.addEventListener("click", handleMaterialClick);
 materialsLibrary.addEventListener("compositionstart", (event) => {
@@ -2267,8 +2367,15 @@ const previewFitButton = document.querySelector("#previewFitButton");
 const previewWidthInput = document.querySelector("#previewWidthInput");
 const appShell = document.querySelector(".app-shell");
 const landingPreview = document.querySelector("#landingPreview");
+const landingFrame = document.querySelector("#landingFrame");
 const isLocalPreviewHost = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 document.body.classList.toggle("production-domain", !isLocalPreviewHost);
+
+if (!isLocalPreviewHost) {
+  document.querySelector(".preview-topbar")?.remove();
+  landingFrame?.removeAttribute("src");
+  landingPreview?.remove();
+}
 
 function updatePreviewMode(width) {
   document.body.classList.toggle("preview-mobile", width <= 520);
@@ -2291,6 +2398,9 @@ function setPreviewWidth(value, button) {
 function setActivePreviewSection(section) {
   const isLanding = section === "landing";
 
+  if (isLanding && landingFrame && !landingFrame.src) {
+    landingFrame.src = landingFrame.dataset.src;
+  }
   appShell.classList.toggle("hidden", isLanding);
   landingPreview.classList.toggle("hidden", !isLanding);
   previewSectionButtons.forEach((button) => {
@@ -2298,17 +2408,19 @@ function setActivePreviewSection(section) {
   });
 }
 
-previewButtons.forEach((button) => {
-  button.addEventListener("click", () => setPreviewWidth(button.dataset.previewWidth, button));
-});
-previewSectionButtons.forEach((button) => {
-  button.addEventListener("click", () => setActivePreviewSection(button.dataset.previewSection));
-});
-previewApplyButton.addEventListener("click", () => setPreviewWidth(previewWidthInput.value));
-previewWidthInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") setPreviewWidth(previewWidthInput.value);
-});
-previewFitButton.addEventListener("click", () => setPreviewWidth("100%", previewFitButton));
+if (isLocalPreviewHost) {
+  previewButtons.forEach((button) => {
+    button.addEventListener("click", () => setPreviewWidth(button.dataset.previewWidth, button));
+  });
+  previewSectionButtons.forEach((button) => {
+    button.addEventListener("click", () => setActivePreviewSection(button.dataset.previewSection));
+  });
+  previewApplyButton.addEventListener("click", () => setPreviewWidth(previewWidthInput.value));
+  previewWidthInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") setPreviewWidth(previewWidthInput.value);
+  });
+  previewFitButton.addEventListener("click", () => setPreviewWidth("100%", previewFitButton));
+}
 
 document.addEventListener("click", (event) => {
   const target = event.target.closest("button, a, [role='button']");
@@ -2318,12 +2430,6 @@ document.addEventListener("click", (event) => {
 
 async function initializeApp() {
   renderCategoryOptions();
-  renderInboundLeads();
-  await loadSharedMaterialState();
-  renderSalesLibrary();
-  renderSalesTextDashboard();
-  renderClientNavigation();
-  renderClients();
 }
 
 initializeApp();

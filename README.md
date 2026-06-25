@@ -1,4 +1,4 @@
-# 파파인사이트
+﻿# 파파인사이트
 
 파파인사이트는 파파컴퍼니 ERP 홈페이지입니다. 현재는 1차 `MVP`(엠브이피: 최소 기능 제품) 단계이며, 직원 로그인 후 내부 대시보드를 사용하는 구조입니다.
 
@@ -169,3 +169,9 @@ https://papainsight.co.kr/?v=0.1-20260528
 - 업로드 자료는 기존 `/api/materials` API(에이피아이: 프로그램끼리 데이터를 주고받는 연결 방식)와 `data/materials-state.json` 목록 구조를 사용합니다.
 - 서버는 base64(베이스64: 파일을 문자 데이터로 바꾼 형식)로 들어온 미디어를 `data/material-assets/` 파일로 분리 저장하고, JSON(제이슨: 데이터 교환 형식)에는 파일 경로, `mediaType`, `mimeType`을 보관합니다.
 - PDF는 카드에서 `PDF 보기`와 `다운로드`를 제공하고, 영상은 카드 안에서 재생 컨트롤을 제공합니다.
+
+## 2026-06-26 인수인계
+
+- 다른 PC 작업 시작 시 먼저 git pull origin main 또는 새 폴더에서 git clone https://github.com/sssddd3564-hash/papainsight.git을 실행한다.
+- 로컬 서버는 node dev-server.js로 실행하고 http://localhost:4175/에서 확인한다.
+

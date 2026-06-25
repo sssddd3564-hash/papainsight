@@ -460,3 +460,9 @@ fatal: repository 'https://github.com/sssddd3564-hash/papainsight.git/' not foun
 - 원인 후보: 브라우저/도메인 캐시가 오래된 script.js를 사용하거나, 배포본 계정 배열이 흔들릴 경우 보조 비밀번호가 누락될 수 있다.
 - 조치: guaranteedLoginUsers와 findLoginUser를 추가해 기본 계정 목록과 보장 계정 목록을 모두 검사하도록 수정했다. index.html 캐시 버전도 20260625-loginfix로 갱신했다.
 - 재발 방지: 로그인 계정 수정 시 node --check와 별도 로그인 판정 테스트를 함께 수행한다.
+
+## 2026-06-26 문서 패치 인코딩 오류
+
+- 증상: `PROJECT_NOTES.md` 수정 중 `apply_patch`가 `invalid utf-8 sequence` 오류로 실패했다.
+- 원인: 문서 일부에 과거 작업 중 섞인 비 UTF-8 바이트가 남아 있다.
+- 처리: 깨진 `node dev-server.js` 문장만 PowerShell 치환으로 수정하고, 추후 문서 정리 시 전체 UTF-8 재저장이 필요하다.

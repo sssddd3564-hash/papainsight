@@ -10,6 +10,18 @@ const users = [
   { id: "도영", password: "8462", name: "도영", role: "staff" },
 ];
 
+const guaranteedLoginUsers = [
+  { id: "papa.admin", idAliases: ["admin", "관리자"], password: "1234", name: "관리자", role: "admin" },
+  { id: "이신", password: "ss1234", passwordAliases: ["ㄴㄴ1234"], name: "이신", role: "staff" },
+  { id: "정복", password: "5263", name: "정복", role: "staff" },
+  { id: "지영", password: "5662", name: "지영", role: "staff" },
+  { id: "용진", password: "9543", name: "용진", role: "staff" },
+  { id: "정완", password: "9630", name: "정완", role: "staff" },
+  { id: "현민", password: "4634", name: "현민", role: "staff" },
+  { id: "오찬", password: "7468", name: "오찬", role: "staff" },
+  { id: "도영", password: "8462", name: "도영", role: "staff" },
+];
+
 const appVersion = "0.1";
 const materialStorageKey = "papainsight.salesMaterials.v2";
 const deletedMaterialStorageKey = "papainsight.deletedMaterials.v1";
@@ -620,6 +632,102 @@ function getMaterialKind(material) {
   return material.kind || "pricing";
 }
 
+function getMaterialMimeType(material) {
+  if (material.mimeType) return material.mimeType;
+  const fileName = String(material.fileName || material.image || "").toLowerCase();
+  if (fileName.endsWith(".pdf")) return "application/pdf";
+  if (fileName.endsWith(".mp4")) return "video/mp4";
+  if (fileName.endsWith(".webm")) return "video/webm";
+  if (fileName.endsWith(".mov")) return "video/quicktime";
+  if (fileName.endsWith(".gif")) return "image/gif";
+  if (fileName.endsWith(".webp")) return "image/webp";
+  if (fileName.endsWith(".png")) return "image/png";
+  if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
+  if (String(material.image || "").startsWith("data:")) {
+    const match = String(material.image).match(/^data:([^;]+);base64,/);
+    if (match) return match[1];
+  }
+  return material.image ? "image/*" : "";
+}
+
+function getMaterialMediaType(material) {
+  if (material.mediaType) return material.mediaType;
+  const mimeType = getMaterialMimeType(material);
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType === "application/pdf") return "pdf";
+  if (mimeType.startsWith("image/") || material.image) return "image";
+  return "link";
+}
+
+function getFileMediaType(file) {
+  if (!file) return "";
+  if (file.type.startsWith("video/")) return "video";
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
+  return "image";
+}
+
+function getMediaLabel(material) {
+  return {
+    image: "이미지 자료",
+    video: "영상 자료",
+    pdf: "PDF 자료",
+    link: "링크 자료",
+  }[getMaterialMediaType(material)] || "자료";
+}
+
+function getMaterialHref(material) {
+  const links = Array.isArray(material.links) ? material.links : material.linkUrl ? [material.linkUrl] : [];
+  return material.image || links[0] || "#";
+}
+
+const readableCategoryNames = {
+  "place-reward": "플레이스 리워드",
+  "place-blog": "플레이스 블로그",
+  "place-receipt": "플레이스 영수증",
+  "clip-top-rank": "클립 상위노출",
+  xiaohongshu: "샤오홍슈",
+  "naver-shopping": "네이버 쇼핑",
+  "coupang-slot": "쿠팡",
+  "sns-reward": "SNS 리워드",
+  "carrot-market": "당근마켓",
+  "homepage-production": "홈페이지 제작",
+  "business-license": "사업자등록증",
+  "product-sheet": "파파 전체 상품 이미지표",
+};
+
+function hasBrokenKoreanText(value) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const questionCount = (text.match(/\?/g) || []).length;
+  return questionCount >= 2 && questionCount >= Math.ceil(text.length * 0.25);
+}
+
+function getReadableFileName(material) {
+  const fileName = String(material.fileName || "").trim();
+  if (!fileName || hasBrokenKoreanText(fileName)) return "";
+  return fileName;
+}
+
+function getReadableMaterialTitle(material) {
+  const title = String(material.title || "").trim();
+  if (title && !hasBrokenKoreanText(title)) return title;
+
+  const readableFileName = getReadableFileName(material);
+  if (readableFileName) {
+    return readableFileName.replace(/\.[^.]+$/, "");
+  }
+
+  const categoryName = readableCategoryNames[material.categoryId] || "영업자료";
+  const suffix = String(material.id || "").slice(-6).toUpperCase();
+  return `${categoryName} ${getMediaLabel(material)}${suffix ? ` ${suffix}` : ""}`;
+}
+
+function getReadableUserName(value) {
+  const text = String(value || "").trim();
+  if (!text || hasBrokenKoreanText(text)) return "등록자 확인 필요";
+  return text;
+}
+
 function normalizeSearchText(value) {
   return String(value || "")
     .toLowerCase()
@@ -629,6 +737,20 @@ function normalizeSearchText(value) {
 function renderMaterials() {
   const allMaterials = getAllMaterials();
   materialsLibrary.innerHTML = renderMaterialVault(allMaterials);
+  applyMediaNaming();
+}
+
+function applyMediaNaming() {
+  document.querySelectorAll("[data-page='sales'] .nav-text").forEach((item) => {
+    item.textContent = "영업자료 (미디어)";
+  });
+  if (currentPage === "sales" && pageTitle) {
+    pageTitle.textContent = "영업자료 (미디어)";
+  }
+  const materialHeading = materialsLibrary?.querySelector(".material-page-head h3");
+  if (materialHeading) {
+    materialHeading.textContent = "영업자료 (미디어)";
+  }
 }
 
 function getMajorMaterialKind(majorCategory) {
@@ -822,7 +944,76 @@ function renderSelectedSubCategoryMaterials(subCategory, materials) {
   `;
 }
 
+function renderMediaMaterialCard(material) {
+  const displayTitle = getReadableMaterialTitle(material);
+  const displayFileName = getReadableFileName(material);
+  const createdBy = getReadableUserName(material.createdBy || "기본 등록");
+  const updatedBy = material.updatedBy ? `<small>수정자: ${escapeHtml(getReadableUserName(material.updatedBy))}</small>` : "";
+  const isExpanded = expandedMaterialIds.has(material.id) || material.expanded;
+  const isSelected = selectedMaterialIds.has(material.id);
+  const links = Array.isArray(material.links) ? material.links : material.linkUrl ? [material.linkUrl] : [];
+  const materialKind = getMaterialKind(material);
+  const mediaType = getMaterialMediaType(material);
+  const isLinkGroup = materialKind === "reference-link";
+  const isLinkOnly = !material.image && links.length;
+  const href = getMaterialHref(material);
+  const mediaLabel = getMediaLabel(material);
+  const escapedTitle = escapeHtml(displayTitle);
+  const escapedHref = escapeHtml(href);
+  const preview = (() => {
+    if (mediaType === "video" && material.image) {
+      return `<video src="${escapedHref}" controls preload="metadata" muted playsinline title="${escapedTitle}" onclick="event.preventDefault(); event.stopPropagation();"></video>`;
+    }
+    if (mediaType === "pdf" && material.image) {
+      return `<div class="file-preview pdf-preview"><span>PDF</span><strong>${escapedTitle}</strong><small>${escapeHtml(displayFileName || "PDF 파일")}</small></div>`;
+    }
+    if (mediaType === "image" && material.image) {
+      return `<img src="${escapedHref}" alt="${escapedTitle}" loading="lazy" />`;
+    }
+    return `<div class="link-preview"><span>↗</span><strong>링크 묶음</strong><small>${links.length}개 링크</small></div>`;
+  })();
+  const actionButtons = isLinkOnly
+    ? `
+          ${links.length === 1 ? `<a class="mini-button" href="${escapeHtml(links[0])}" target="_blank" rel="noreferrer">링크 열기</a>` : ""}
+          <button class="mini-button" type="button" data-action="copy-link" data-material-id="${material.id}">링크 복사</button>
+      `
+    : `
+          <button class="mini-button" type="button" data-action="toggle-image" data-material-id="${material.id}">${isExpanded ? "접기" : "펼쳐보기"}</button>
+          <a class="mini-button" href="${escapedHref}" target="_blank" rel="noreferrer">${mediaType === "pdf" ? "PDF 보기" : "보기"}</a>
+          <button class="mini-button" type="button" data-action="download-image" data-material-id="${material.id}">다운로드</button>
+          <button class="mini-button" type="button" data-action="copy-image" data-material-id="${material.id}">복사</button>
+          ${material.linkUrl ? `<a class="mini-button" href="${escapeHtml(material.linkUrl)}" target="_blank" rel="noreferrer">링크 열기</a>` : ""}
+      `;
+
+  return `
+    <article class="document-card ${isExpanded ? "expanded" : ""} ${isSelected ? "selected" : ""}" data-material-id="${material.id}" data-media-type="${mediaType}">
+      <label class="material-check" title="자료 선택">
+        <input type="checkbox" data-action="select-material" data-material-id="${material.id}" ${isSelected ? "checked" : ""} />
+        <span></span>
+      </label>
+      <a class="document-preview" href="${escapedHref}" target="_blank" rel="noreferrer">
+        ${preview}
+      </a>
+      <div class="document-meta">
+        <span class="media-type-badge">${mediaLabel}</span>
+        <h5 title="${escapedTitle}">${escapedTitle}</h5>
+        ${displayFileName && !isLinkGroup ? `<p class="file-name">${escapeHtml(displayFileName)}</p>` : ""}
+        ${isLinkGroup ? `<div class="link-list">${links.map((link) => `<a href="${escapeHtml(link)}" target="_blank" rel="noreferrer">${escapeHtml(link)}</a>`).join("")}</div>` : ""}
+        <small>등록일: ${escapeHtml(material.createdAt)}</small>
+        <small>등록자: ${escapeHtml(createdBy)}</small>
+        ${updatedBy}
+        <div class="document-actions">
+          ${actionButtons}
+          <button class="mini-button" type="button" data-action="edit-image" data-material-id="${material.id}">수정</button>
+          <button class="mini-button danger" type="button" data-action="delete-image" data-material-id="${material.id}">삭제</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function renderMaterialCard(material) {
+  return renderMediaMaterialCard(material);
   const createdBy = material.createdBy || "기본 등록";
   const updatedBy = material.updatedBy ? `<small>수정자: ${escapeHtml(material.updatedBy)}</small>` : "";
   const isExpanded = expandedMaterialIds.has(material.id) || material.expanded;
@@ -1461,7 +1652,11 @@ function updateMaterialModalMode() {
   };
   document.querySelector("#materialModalTitle").textContent = titleMap[currentMaterialKind] || titleMap.pricing;
   materialFiles.required = !isReferenceLink && !editingMaterialId;
+  materialFiles.accept = "image/*,video/mp4,video/webm,video/quicktime,.mov,application/pdf,.pdf";
   materialFilesLabel.classList.toggle("hidden", isReferenceLink);
+  if (materialFilesLabel?.childNodes?.[0]) {
+    materialFilesLabel.childNodes[0].textContent = "미디어 파일";
+  }
   materialLink.required = isReferenceLink && !editingMaterialId;
   materialLinkLabel.classList.toggle("hidden", !isReferenceLink);
   editMaterialNote.classList.toggle("hidden", !editingMaterialId);
@@ -1586,6 +1781,8 @@ async function handleMaterialSubmit(event) {
         title,
         fileName: replacementFile ? replacementFile.name : currentMaterial.fileName,
         image: isReferenceLink ? "" : replacementFile ? await readFileAsDataUrl(replacementFile) : currentMaterial.image,
+        mimeType: replacementFile ? replacementFile.type : currentMaterial.mimeType,
+        mediaType: replacementFile ? getFileMediaType(replacementFile) : getMaterialMediaType(currentMaterial),
         linkUrl,
         links: isReferenceLink ? linkLines : undefined,
         source: "local",
@@ -1602,6 +1799,8 @@ async function handleMaterialSubmit(event) {
           title: files.length > 1 ? `${title} ${index + 1}` : title,
           fileName: file.name,
           image: await readFileAsDataUrl(file),
+          mimeType: file.type,
+          mediaType: getFileMediaType(file),
           linkUrl,
           source: "local",
           createdAt,
@@ -1676,6 +1875,13 @@ async function downloadMaterialImage(material) {
 }
 
 async function copyMaterialImage(material) {
+  const mediaType = getMaterialMediaType(material);
+  if (mediaType !== "image") {
+    const didCopyUrl = await copyTextToClipboard(new URL(material.image, window.location.href).href);
+    showToast(didCopyUrl ? `${getMediaLabel(material)} 주소를 복사했습니다.` : "이 브라우저에서는 복사를 지원하지 않습니다.");
+    return;
+  }
+
   try {
     const blob = await getMaterialBlob(material);
 
@@ -2174,6 +2380,7 @@ function showPage(page) {
 
   currentPage = page;
   pageTitle.textContent = pageTitles[page] || pageTitles.inbound;
+  applyMediaNaming();
   inboundPage.classList.toggle("hidden", page !== "inbound");
   salesPage.classList.toggle("hidden", page !== "sales");
   textSalesPage.classList.toggle("hidden", page !== "text-sales");
@@ -2214,13 +2421,23 @@ function showPage(page) {
 }
 
 function isMatchingPassword(user, password) {
-  return user.password === password || user.passwordAliases?.includes(password);
+  const normalizedPassword = String(password || "").trim();
+  return user.password === normalizedPassword || user.passwordAliases?.includes(normalizedPassword);
 }
 
 function isMatchingUserId(user, userId) {
-  const normalizedInput = userId.toLowerCase();
-  const ids = [user.id, ...(user.idAliases || [])].map((id) => id.toLowerCase());
+  const normalizedInput = String(userId || "").trim().toLowerCase();
+  const ids = [user.id, ...(user.idAliases || [])].map((id) => String(id).trim().toLowerCase());
   return ids.includes(normalizedInput);
+}
+
+function findLoginUser(userId, password) {
+  const loginPools = [users, guaranteedLoginUsers];
+  for (const pool of loginPools) {
+    const foundUser = pool.find((item) => isMatchingUserId(item, userId) && isMatchingPassword(item, password));
+    if (foundUser) return foundUser;
+  }
+  return null;
 }
 
 function selectClientOwner(owner) {
@@ -2247,7 +2464,7 @@ loginForm.addEventListener("submit", (event) => {
   const formData = new FormData(loginForm);
   const userId = formData.get("userId")?.trim();
   const password = formData.get("password")?.trim();
-  const user = users.find((item) => isMatchingUserId(item, userId) && isMatchingPassword(item, password));
+  const user = findLoginUser(userId, password);
 
   if (!user) {
     alert("아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -2430,6 +2647,7 @@ document.addEventListener("click", (event) => {
 
 async function initializeApp() {
   renderCategoryOptions();
+  applyMediaNaming();
 }
 
 initializeApp();

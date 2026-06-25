@@ -18,6 +18,11 @@ const types = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".pdf": "application/pdf",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
   ".ico": "image/x-icon",
 };
 
@@ -37,6 +42,10 @@ function getExtensionFromMime(mimeType = "") {
   if (mimeType.includes("png")) return "png";
   if (mimeType.includes("webp")) return "webp";
   if (mimeType.includes("gif")) return "gif";
+  if (mimeType.includes("pdf")) return "pdf";
+  if (mimeType.includes("mp4")) return "mp4";
+  if (mimeType.includes("webm")) return "webm";
+  if (mimeType.includes("quicktime")) return "mov";
   return "png";
 }
 
@@ -70,10 +79,18 @@ function extractMaterialAssets(state) {
     fs.writeFileSync(filePath, Buffer.from(match[2], "base64"));
     changed = true;
 
+    const mediaType = match[1].startsWith("video/")
+      ? "video"
+      : match[1] === "application/pdf"
+        ? "pdf"
+        : "image";
+
     return {
       ...material,
       image: `/data/material-assets/${encodeURIComponent(fileName)}`,
       fileName: material.fileName || fileName,
+      mimeType: material.mimeType || match[1],
+      mediaType: material.mediaType || mediaType,
     };
   });
 
